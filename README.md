@@ -5,3 +5,5 @@ mvBIC extends the standard the standard Bayesian Information Criterion (BIC) to 
 ```r
 devtools::install_github("GabrielHoffman/mvBIC")
 ```
+
+[Manual](https://users.hpc.mssm.edu/~hoffmg01/software/mvBIC/mvBIC-manual.pdf)
