@@ -1,0 +1,178 @@
+
+# library(variancePartition)
+# library(lme4)
+# library(mvBIC)
+
+
+# # Example 1
+# ###########
+
+# n = 50
+# p = 200
+# m = 1
+# X = matrix(rnorm(n*1000*m), n, 1000*m)
+# colnames(X) = paste0("X", 1:ncol(X))
+# B = matrix(4, m, p)
+# Y = X[,1:m] %*% B + matrix(rnorm(n*p), n, p)
+# X_df = as.data.frame(X)
+
+# runRegressions = function( formula ){
+# 	lapply( 1:ncol(Y), function(j){
+# 		y = Y[,j]
+# 		form = as.formula(paste0('y ', paste0(formula, collapse=' ')))
+# 		lm( form, data=X_df)
+# 		})
+# }
+
+
+# mTrue = mvBIC(runRegressions( ~ X1))
+
+# # try a lot of models
+# mRnd = sapply(1:100, function(i){
+# 	j = sample.int(ncol(X), 1)
+# 	form =  paste('~ X1 + ', paste(paste0("X", sort(j)), collapse=" + "))
+# 	mvBIC(runRegressions(form))
+# 	})
+
+# sum(mTrue < mRnd)
+
+
+
+# # Example 2
+# ###########
+
+# data(varPartData)
+
+# form <- ~ (1|Batch) + (1|Individual) + (1|Tissue)
+# p = 200
+# # i = sample.int(ncol(geneExpr), 100)
+# i = 1:100
+# fitList1 = fitVarPartModel( geneExpr[1:p,i], form, info[i,], showWarnings=FALSE)
+
+
+#  info$x = rnorm(nrow(info))
+#  info$y = rnorm(nrow(info))
+#  info$z = rnorm(nrow(info))
+# form <- ~ Batch + (1|Individual) + (1|Tissue) + x #+ z + y 
+
+# fitList2 = fitVarPartModel( geneExpr[1:p,i], form, info[i,], showWarnings=FALSE)
+
+
+# mvBIC(fitList1)
+# mvBIC(fitList2)
+# mvBIC(fitList1) < mvBIC(fitList2)
+
+
+# mvBIC_fit( geneExpr, ~ Batch + (1|Individual) + (1|Tissue) + x, info, verbose=FALSE)
+
+# mvBIC_fit( geneExpr, ~ Batch + (1|Individual), info, verbose=FALSE)
+
+
+# mvBIC_fit( geneExpr, ~ Batch + (1|Individual) + (1|Tissue), info, verbose=FALSE)
+
+
+
+# # Example 3
+# ###########
+
+# # Stepwise regression
+
+
+
+
+
+
+# form <- ~ (1|Batch) + (1|Individual) + (1|Tissue) + Age + Height
+# vp = fitExtractVarPartModel( geneExpr, form, info)
+
+# plotVarPart( vp )
+
+
+
+
+# # source("./evalCriterion.R")
+# library(mvBIC)
+
+# data(varPartData)
+
+# # add some noise variables
+# info$x = rnorm(nrow(info))
+# info$y = rnorm(nrow(info))
+# info$z = rnorm(nrow(info))
+
+# variables = c("(1|Batch)", "(1|Tissue)", "Age", "Height", "x", "y", "z")
+
+# baseFormula = ~ (1|Individual)
+
+# deltaCutoff = 100
+
+# res = mvForwardStepwise( geneExpr, baseFormula, info, variables)
+
+
+
+
+
+# q()
+# R
+# library(variancePartition)
+# library(lme4)
+
+# source("./evalCriterion.R")
+
+
+
+# Y = with(iris, rbind(Sepal.Width, Sepal.Length))
+
+# mvBIC_fit( Y, ~ Petal.Width + Petal.Length + Species, data=iris)
+
+
+
+# fit1 = lm( cbind(Sepal.Width, Sepal.Length) ~ Petal.Width + Petal.Length + Species ,data=iris)
+# mvBIC( fit1 )
+
+
+
+# mvBIC_from_residuals( t(residuals(fit1)), nparam(fit1) )
+
+
+
+
+# fit2 = lm( cbind(Sepal.Width, Sepal.Length) ~ Petal.Width + Species ,data=iris)
+# mvBIC( fit2 )
+# mvBIC_fit( Y, ~ Petal.Width + Species, data=iris)
+
+
+
+
+
+
+
+
+
+
+
+# Y = with(iris, rbind(Sepal.Width, Sepal.Length))
+
+# bestModel = mvForwardStepwise( Y, ~ 1, data=iris, variables=colnames(iris)[3:5], deltaCutoff=10)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
