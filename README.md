@@ -7,4 +7,4 @@ devtools::install_github("GabrielHoffman/mvBIC", repos=BiocManager::repositories
 ```
 This automatically installs dependencies from [Bioconductor](bioconductor.org)
 
-[Manual](https://users.hpc.mssm.edu/~hoffmg01/software/mvBIC/mvBIC-manual.pdf)
+See [manual](https://users.hpc.mssm.edu/~hoffmg01/software/mvBIC/mvBIC-manual.pdf) for examples and documentation.
