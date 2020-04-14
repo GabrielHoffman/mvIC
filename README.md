@@ -3,7 +3,9 @@
 
 mvBIC extends the standard the standard Bayesian Information Criterion (BIC) to the case of multivariate regression.  The model fit across many response variables is evaluated and the criterion explicitly considers correlation between reponses.  mvBIC is appiciable to linear and linear mixed models.
 ```r
-devtools::install_github("GabrielHoffman/mvBIC")
+devtools::install_github("GabrielHoffman/mvBIC",
+repos=BiocManager::repositories())
 ```
+This automatically installs dependencies from [Bioconductor](bioconductor.org)
 
 [Manual](https://users.hpc.mssm.edu/~hoffmg01/software/mvBIC/mvBIC-manual.pdf)
