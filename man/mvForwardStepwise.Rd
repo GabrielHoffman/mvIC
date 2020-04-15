@@ -10,7 +10,7 @@ mvForwardStepwise(
   data,
   variables,
   deltaCutoff = 100,
-  countLevels = TRUE,
+  nparamsMethod = c("edf", "countLevels", "lme4"),
   verbose = TRUE
 )
 }
@@ -25,7 +25,7 @@ mvForwardStepwise(
 
 \item{deltaCutoff}{stop interating of the model improvement is less than deltaCutoff}
 
-\item{countLevels}{default TRUE, count number of levels rather than number of variance compinents.  See description in \code{\link{nparam}}}
+\item{nparamsMethod}{"edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}}
 
 \item{verbose}{Default TRUE. Print messages}
 }

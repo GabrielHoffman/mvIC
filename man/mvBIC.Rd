@@ -4,12 +4,12 @@
 \alias{mvBIC}
 \title{Evaluate multivariate BIC}
 \usage{
-mvBIC(fitList, countLevels = TRUE)
+mvBIC(fitList, nparamsMethod = c("edf", "countLevels", "lme4"))
 }
 \arguments{
 \item{fitList}{list of model fits with \code{lm()} or \code{lmer()}.  All models must have same data, response and formula.}
 
-\item{countLevels}{default TRUE, count number of levels rather than number of variance compinents.  See \code{\link{nparam}} for details}
+\item{nparamsMethod}{"edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}}
 }
 \value{
 multivariate BIC value

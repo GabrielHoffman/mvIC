@@ -91,25 +91,7 @@
 
 
 # # source("./evalCriterion.R")
-# library(mvBIC)
-
-# data(varPartData)
-
-# # add some noise variables
-# info$x = rnorm(nrow(info))
-# info$y = rnorm(nrow(info))
-# info$z = rnorm(nrow(info))
-
-# variables = c("(1|Batch)", "(1|Tissue)", "Age", "Height", "x", "y", "z")
-
-# baseFormula = ~ (1|Individual)
-
-# deltaCutoff = 100
-
-# res = mvForwardStepwise( geneExpr, baseFormula, info, variables)
-
-
-
+#
 
 
 # q()
@@ -155,12 +137,52 @@
 
 # bestModel = mvForwardStepwise( Y, ~ 1, data=iris, variables=colnames(iris)[3:5], deltaCutoff=10)
 
+q()
+R
+
+library(variancePartition)
+library(mvBIC)
+
+data(varPartData)
+
+# add some noise variables
+info$x = rnorm(nrow(info))
+info$y = rnorm(nrow(info))
+info$z = rnorm(nrow(info))
+
+variables = c("(1|Individual)", "(1|Batch)", "(1|Tissue)", "Age", "Height", "x", "y", "z")
+
+baseFormula = ~ 1
+
+deltaCutoff = 100
+
+res = mvForwardStepwise( geneExpr, baseFormula, info, variables)
+
+
+
+
+res2 = mvForwardStepwise( geneExpr, baseFormula, info, variables, nparamsMethod = "countLevels")
+
+
+fit1 = lmer( geneExpr[1,] ~ (1|Batch), data=info)
+mvBIC( fit1 )
 
 
 
 
 
+devtools::reload("/Users/gabrielhoffman/workspace/repos/mvBIC")
 
+
+
+
+fit1 = lm( iris$Sepal.Width ~ Species, data=iris)
+mvBIC( fit1 )
+
+
+
+fit1 = lmer( iris$Sepal.Width ~ (1|Species), data=iris)
+mvBIC( fit1 )
 
 
 

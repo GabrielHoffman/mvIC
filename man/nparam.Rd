@@ -4,18 +4,18 @@
 \alias{nparam}
 \title{Number of parameters in model}
 \usage{
-nparam(object, countLevels = TRUE)
+nparam(object, nparamsMethod = c("edf", "countLevels", "lme4"))
 }
 \arguments{
 \item{object}{model fit by \code{lm()} or \code{lmer()}}
 
-\item{countLevels}{default TRUE, count number of levels rather than number of variance compinents.  See description}
+\item{nparamsMethod}{"edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}}
 }
 \value{
 number of parameters
 }
 \description{
-In the case of \code{lm()}, the result is the nubmer of coefficients + 1 for the variance term.  In the case of \code{lmer()}, there are two options.  For \code{countLevels = TRUE}, returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. For \code{countLevels = FALSE}, returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize.
+In the case of \code{lm()}, the result is the nubmer of coefficients + 1 for the variance term.  In the case of \code{lmer()}, there are two options.  For a linear mixed model there are 3 options.  "edf": effective degrees of freedom as computed by sum of diagonal values of the hat matrix return by lmer. "countLevels", returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. "lme4", returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize.
 }
 \details{
 Number of parameters in model from \code{lm()} or \code{lmer()}

@@ -4,7 +4,13 @@
 \alias{mvBIC_fit}
 \title{Evaluate multivariate BIC}
 \usage{
-mvBIC_fit(exprObj, formula, data, countLevels = TRUE, verbose = FALSE)
+mvBIC_fit(
+  exprObj,
+  formula,
+  data,
+  nparamsMethod = c("edf", "countLevels", "lme4"),
+  verbose = FALSE
+)
 }
 \arguments{
 \item{exprObj}{matrix of expression data (g genes x n samples), or ExpressionSet, or EList returned by voom() from the limma package}
@@ -13,7 +19,7 @@ mvBIC_fit(exprObj, formula, data, countLevels = TRUE, verbose = FALSE)
 
 \item{data}{data.frame with columns corresponding to formula}
 
-\item{countLevels}{default TRUE, count number of levels rather than number of variance compinents.  See description in \code{\link{nparam}}}
+\item{nparamsMethod}{"edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}}
 
 \item{verbose}{Default TRUE. Print messages}
 }

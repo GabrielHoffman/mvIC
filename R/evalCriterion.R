@@ -10,7 +10,7 @@
 #' @param data data.frame with columns corresponding to formula
 #' @param variables array of variable names to be considered in the regression.  If variable should be considered as random effect, use '(1|A)'.
 #' @param deltaCutoff stop interating of the model improvement is less than deltaCutoff 
-#' @param countLevels default TRUE, count number of levels rather than number of variance compinents.  See description in \code{\link{nparam}}
+#' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
 #' @param verbose Default TRUE. Print messages
 #' 
 #' @return list with formula of final model, and trace of iterations during model selection
@@ -26,19 +26,22 @@
 #' @import variancePartition
 #' @importFrom stats as.formula
 #' @export
-mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff = 100, countLevels = TRUE, verbose=TRUE  ){
+mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff = 100, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=TRUE  ){
+
+	nparamsMethod = match.arg(nparamsMethod)
 
 	# score base model
 	suppressWarnings({
-	baseScore = mvBIC_fit( exprObj, baseFormula, data, countLevels=countLevels, verbose=FALSE)
+	baseScore = mvBIC_fit( exprObj, baseFormula, data, nparamsMethod=nparamsMethod, verbose=FALSE)
 	})
 
-	resultsList = list(	iteration 		= c(),
-						variable 		= c(),
-						delta 			= c(), 
-						score 			= c(), 
-						isBestVariable	= c(), 
-						isAdded			= c())
+	resultsList = list(	iter 		= c(),
+						variable 	= c(),
+						delta 		= c(), 
+						score 		= c(),
+						nparams 	= c(), 
+						isBestVar	= c(), 
+						isAdded		= c())
 
 	iteration = 1
 
@@ -48,7 +51,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 		if( verbose ) message(paste0("Base model: ", paste0(baseFormula, collapse=' ')))
 
 		# evaluate score of each potential model
-		score = sapply( variables, function(feature){
+		score = lapply( variables, function(feature){
 			if( verbose ) message(paste("\tevaluating: +", feature))
 
 			# formula of model to try
@@ -56,25 +59,26 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 
 			suppressWarnings({
 			# evaluate multivariate BIC
-			mvBIC_fit( exprObj, form, data, countLevels=countLevels, verbose=FALSE)
+			mvBIC_fit( exprObj, form, data, nparamsMethod=nparamsMethod, verbose=FALSE)
 			})
 			})
 
 		# get index of minumum score
-		i = which.min(score)
+		i = which.min(unlist(score))
 
 		# get difference between best and second best score
-		delta = score[i] - baseScore
+		delta = as.numeric(score[[i]] - baseScore)
 		if( verbose ) message("Best model delta: ", format(delta, digits=2))	
 
 		# save results
-		resultsList$iteration = c(resultsList$iteration, rep(iteration, length(score)))
+		resultsList$iter = c(resultsList$iter, rep(iteration, length(score)))
 		resultsList$variable = c(resultsList$variable, variables)
-		resultsList$delta = c(resultsList$delta, score - baseScore)
-		resultsList$score = c(resultsList$score, score)
+		resultsList$delta = c(resultsList$delta, as.numeric(unlist(score) - baseScore) )
+		resultsList$score = c(resultsList$score, unlist(score))
+		resultsList$nparams = c(resultsList$nparams, unlist(lapply(score, function(x) round(attr(x, 'param')$m, 2))) )
 		isBest = rep("", length(score))
 		isBest[i] = "yes"
-		resultsList$isBestVariable = c(resultsList$isBestVariable, isBest)
+		resultsList$isBestVar = c(resultsList$isBestVar, isBest)
 		isAdded = rep("", length(score))		
 
 		iteration = iteration + 1
@@ -85,7 +89,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 
 			# set new model, baseScore and possible variable list
 			baseFormula = as.formula(paste(paste0(baseFormula, collapse=' '), "+", variables[i]))
-			baseScore = score[i]
+			baseScore = score[[i]]
 			variables = variables[-i]			
 			isAdded[i] = "yes"
 			resultsList$isAdded = c(resultsList$isAdded, isAdded)
@@ -124,7 +128,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 #' @param exprObj matrix of expression data (g genes x n samples), or ExpressionSet, or EList returned by voom() from the limma package
 #' @param formula specifies variables for the linear (mixed) model.  Must only specify covariates, since the rows of exprObj are automatically used as a response. e.g.: \code{~ a + b + (1|c)} Formulas with only fixed effects also work, and \code{lmFit()} followed by \code{contrasts.fit()} are run.
 #' @param data data.frame with columns corresponding to formula
-#' @param countLevels default TRUE, count number of levels rather than number of variance compinents.  See description in \code{\link{nparam}}
+#' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
 #' @param verbose Default TRUE. Print messages
 #'
 #' @description
@@ -157,7 +161,9 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 #' @import variancePartition 
 #'
 #' @export
-mvBIC_fit = function( exprObj, formula, data, countLevels = TRUE, verbose=FALSE ){
+mvBIC_fit = function( exprObj, formula, data, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE ){
+
+	nparamsMethod = match.arg(nparamsMethod)
 
 	# fit model and compute residuals
 	suppressWarnings({
@@ -167,27 +173,24 @@ mvBIC_fit = function( exprObj, formula, data, countLevels = TRUE, verbose=FALSE 
 	# extract residuals
 	residMatrix = residuals( modelFit, modelFit )
 
-	# for a fixed effect model, cat fitVarPartModel() fails
-	
-	fit = tryCatch({
-	    # get one full model fit
-	    suppressWarnings({
-		fitVarPartModel( exprObj[1,,drop=FALSE], formula, data, showWarnings=FALSE, quiet=!verbose)[[1]]
-		})
-	}, error = function(e) {
-		return("isError")
-	})
-
-	if( is(fit, "character") ){
-		# fixed effect
+	# effect fixed 
+	if( modelFit$method == "ls"){		
 	   	m <- ncol(coef(modelFit)) + 1
 	}else{
-		# mixed model
-		# extract number of parameters
-		m <- nparam( fit, countLevels=countLevels)
+
+		if( nparamsMethod == "edf" ){
+		    k = min(100, nrow(exprObj))
+		}else{
+			k = 1
+		}
+
+		fitList = fitVarPartModel( exprObj[1:k,,drop=FALSE], formula, data, showWarnings=FALSE, quiet=!verbose)
+
+		# get number of parameters
+		m <- nparam( fitList, nparamsMethod=nparamsMethod)
 	}
 	
-	mvBIC_from_residuals( residMatrix, m)
+	mvBIC_from_residuals( residMatrix, m )
 }	
 
 
@@ -229,7 +232,7 @@ getResids = function(fitList){
 	}else if(is(fitList, "mlm")){
 		residMatrix = t(residuals( fitList))
 	}else{
-		stop("Fit must be list or mlm")
+		residMatrix = t(t(residuals(fit1)))
 	}
 	residMatrix
 }
@@ -239,14 +242,26 @@ getResids = function(fitList){
 #' Number of parameters in model from \code{lm()} or \code{lmer()}
 #' 
 #' @param object model fit by \code{lm()} or \code{lmer()}
-#' @param countLevels default TRUE, count number of levels rather than number of variance compinents.  See description
+#' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
 #'
 #' @description 
-#' In the case of \code{lm()}, the result is the nubmer of coefficients + 1 for the variance term.  In the case of \code{lmer()}, there are two options.  For \code{countLevels = TRUE}, returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. For \code{countLevels = FALSE}, returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize. 
+#' In the case of \code{lm()}, the result is the nubmer of coefficients + 1 for the variance term.  In the case of \code{lmer()}, there are two options.  For a linear mixed model there are 3 options.  "edf": effective degrees of freedom as computed by sum of diagonal values of the hat matrix return by lmer. "countLevels", returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. "lme4", returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize. 
 #' @return number of parameters
 #' @importFrom stats coef
 #' @importFrom methods is
-nparam = function( object, countLevels = TRUE){
+nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
+
+	nparamsMethod = match.arg(nparamsMethod)
+
+	if( is(object, "list") & nparamsMethod == "edf" ){
+
+		if( all(sapply(object, function(fit) is(fit, "merMod"))) ){
+			# if object is a list of merMod fits, compute the mean effective degrees of freedom
+			# this is more stable than code below using edf of just one model
+			m = mean(sapply( object, function(fit) sum(hatvalues(fit)) )) + 1
+			nparamsMethod = "already estimated"
+		}
+	}
 
 	# if object is not any of these
 	if( !is(object, "lm") & !is(object, "mlm") & !is(object, 'merMod') ){
@@ -258,18 +273,29 @@ nparam = function( object, countLevels = TRUE){
 		# must be evaluated first because if object is 'mlm', it is also 'lm'
 		# need 'mlm' to take presidence
 		m = nrow(coef(object)) + 1
+		attr(m, "nparamsMethod") = "lm"
 	}else if( is(object, "lm") ){
 		m = length(coef(object)) + 1
+		attr(m, "nparamsMethod") = "lm"
 	}else if( is(object, "merMod") ){
 
-	    if( countLevels ){
+		m = switch( nparamsMethod, 
+			# effective degrees of freedom
+			# Add term for residual variance
+			"edf" = sum(hatvalues(object)) + 1,
+
 	   	 	# fixed + number of random levels
-	    	m = length(object@beta) + object@devcomp[["dims"]][['q']] + object@devcomp[["dims"]][["useSc"]]
-	    }else{
-	    	# lme4:::npar.merMod
+			"countLevels" = length(object@beta) + object@devcomp[["dims"]][['q']] + object@devcomp[["dims"]][["useSc"]],
+
+			# lme4:::npar.merMod
 			# counts each random effect as a single parameter
-		    m = length(object@beta) + length(object@theta) + object@devcomp[["dims"]][["useSc"]]
-	    }
+			"lme4" = length(object@beta) + length(object@theta) + object@devcomp[["dims"]][["useSc"]],
+
+			"already estimated" = m
+			)
+
+		attr(m, "nparamsMethod") = nparamsMethod
+
 	}else{
 		stop("object is not a valid model fit from lm() or lmer()")
 	}
@@ -282,7 +308,7 @@ nparam = function( object, countLevels = TRUE){
 #' Evaluate multivariate BIC from a list of regression fits
 #'
 #' @param fitList list of model fits with \code{lm()} or \code{lmer()}.  All models must have same data, response and formula.
-#' @param countLevels default TRUE, count number of levels rather than number of variance compinents.  See \code{\link{nparam}} for details
+#' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
 #'
 #' @description
 #' Evaluate multivariate BIC while considering correlation between response variables. For n samples, p responses and m parameters for each model, evaluate the multivariate BIC as \deqn{n * logDet(\Sigma) + log(n) * (p*m + 0.5*p*(p+1))}
@@ -312,13 +338,15 @@ nparam = function( object, countLevels = TRUE){
 #' 
 #' @importFrom methods is
 #' @export
-mvBIC = function( fitList, countLevels = TRUE ){
+mvBIC = function( fitList, nparamsMethod = c("edf", "countLevels", "lme4") ){
+
+	nparamsMethod = match.arg(nparamsMethod)
 
 	# get residuals for 'mlm', 'lm', or list of 'lm' or 'lmer'
 	residMatrix = getResids( fitList )
 
 	# get number of parameters for multiple forms of fitList
-	m = nparam( fitList, countLevels=countLevels )
+	m = nparam( fitList, nparamsMethod=nparamsMethod )
 
 	mvBIC_from_residuals( residMatrix, m )
 }
@@ -332,7 +360,7 @@ mvBIC = function( fitList, countLevels = TRUE ){
 ##' @param residMatrix matrix of residuals where rows are features
 ##' @param m number of parameters for each model
 ##' 
-mvBIC_from_residuals = function( residMatrix, m){
+mvBIC_from_residuals = function( residMatrix, m ){
 
 	n = ncol(residMatrix) # number of samples
 	p = nrow(residMatrix) # number of response variables
@@ -359,9 +387,20 @@ mvBIC_from_residuals = function( residMatrix, m){
 
 	# retrun data term plus penalty
 	res = dataTerm + penalty
-	attr(res, 'params') = data.frame(n=n, p=p, m=m)
+	attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m))
+
+	if( ! is.null( attr(m, 'nparamsMethod') )){
+		attr(res, 'nparamsMethod') = attr(m, 'nparamsMethod')
+	}else{
+		attr(res, 'nparamsMethod') = "lm"
+	}
+
 	res
 }
+
+
+new
+
 
 
 
