@@ -5,6 +5,6 @@ mvBIC extends the standard the standard Bayesian Information Criterion (BIC) to 
 ```r
 devtools::install_github("GabrielHoffman/mvBIC", repos=BiocManager::repositories())
 ```
-This automatically installs dependencies from [Bioconductor](bioconductor.org)
+This automatically installs dependencies from [Bioconductor](https://bioconductor.org)
 
 See [manual](https://users.hpc.mssm.edu/~hoffmg01/software/mvBIC/mvBIC-manual.pdf) for examples and documentation.
