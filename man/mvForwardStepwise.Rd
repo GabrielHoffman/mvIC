@@ -9,7 +9,7 @@ mvForwardStepwise(
   baseFormula,
   data,
   variables,
-  deltaCutoff = 100,
+  deltaCutoff = 10,
   nparamsMethod = c("edf", "countLevels", "lme4"),
   verbose = TRUE
 )

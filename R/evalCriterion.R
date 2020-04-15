@@ -26,7 +26,7 @@
 #' @import variancePartition
 #' @importFrom stats as.formula
 #' @export
-mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff = 100, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=TRUE  ){
+mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff = 10, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=TRUE  ){
 
 	nparamsMethod = match.arg(nparamsMethod)
 
@@ -232,7 +232,7 @@ getResids = function(fitList){
 	}else if(is(fitList, "mlm")){
 		residMatrix = t(residuals( fitList))
 	}else{
-		residMatrix = t(t(residuals(fit1)))
+		residMatrix = t(t(residuals(fitList)))
 	}
 	residMatrix
 }
@@ -249,6 +249,7 @@ getResids = function(fitList){
 #' @return number of parameters
 #' @importFrom stats coef
 #' @importFrom methods is
+#' @importFrom stats hatvalues
 nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 
 	nparamsMethod = match.arg(nparamsMethod)
