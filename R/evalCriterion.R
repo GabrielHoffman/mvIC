@@ -245,7 +245,7 @@ getResids = function(fitList){
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
 #'
 #' @description 
-#' In the case of \code{lm()}, the result is the nubmer of coefficients + 1 for the variance term.  In the case of \code{lmer()}, there are two options.  For a linear mixed model there are 3 options.  "edf": effective degrees of freedom as computed by sum of diagonal values of the hat matrix return by lmer. "countLevels", returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. "lme4", returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize. 
+#' In the case of \code{lm()}, the result is the number of coefficients, + 1 for the variance term.  For a linear mixed model fit with \code{lmer()} there are 3 options.  "edf": effective degrees of freedom as computed by sum of diagonal values of the hat matrix return by \code{lmer()} . "countLevels", returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. "lme4", returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize. 
 #' @return number of parameters
 #' @importFrom stats coef
 #' @importFrom methods is

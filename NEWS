@@ -2,3 +2,4 @@
 # v1.1   April 15th, 2020
 	o define number of parameters for BIC as nparamsMethod = c("edf", "countLevels", "lme4")
 	o set default to effective degrees of freedom: "edf" this reduce the penalty for random effects compared to counting the levels
+	o set stopping criterion to delta of 10
