@@ -1,3 +1,8 @@
+# v1.1.1  April 16th, 2020
+	o Improve documentation
+	o add naive BIC method
+	o add print and show methods
+
 
 # v1.1   April 15th, 2020
 	o define number of parameters for BIC as nparamsMethod = c("edf", "countLevels", "lme4")

@@ -4,12 +4,14 @@
 \alias{mvBIC_from_residuals}
 \title{Evaluate multivariate BIC from matrix of residuals}
 \usage{
-mvBIC_from_residuals(residMatrix, m)
+mvBIC_from_residuals(residMatrix, m, useMVBIC = TRUE)
 }
 \arguments{
 \item{residMatrix}{matrix of residuals where rows are features}
 
 \item{m}{number of parameters for each model}
+
+\item{useMVBIC}{(development only, do not change)}
 }
 \description{
 Evaluate multivariate BIC from matrix of residuals

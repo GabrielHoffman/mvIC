@@ -1,11 +1,11 @@
 Package: mvBIC
 Type: Package
-Title: Evaluate BIC for multivariate regression to enable model selection with multiple response variables
-Version: 1.1
-Date: 2020-04-15
+Title: Extends the standard the standard Bayesian Information Criterion (BIC) to the case of multivariate regression
+Version: 1.1.1
+Date: 2020-04-16
 Author: Gabriel E. Hoffman
 Maintainer: Gabriel E. Hoffman <gabriel.hoffman@mssm.edu>
-Description: mvBIC extends the standard the standard Bayesian Information Criterion (BIC) to the case of multivariate regression.  The model fit across many response variables is evaluated and the criterion explicitly considers correlation between reponses.  mvBIC is appiciable to linear and linear mixed models.
+Description: mvBIC extends the standard the standard Bayesian Information Criterion (BIC) to the case of multivariate regression. The model fit across many response variables is evaluated and the criterion explicitly considers correlation between reponses. mvBIC is appiciable to linear and linear mixed models.  Forward stepwise regression with the mvBIC criterion enables automated variable selection for high dimensional datasets.
 License: GPL (>= 2)
 Suggests:
     BiocStyle

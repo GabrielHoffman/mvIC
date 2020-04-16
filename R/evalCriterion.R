@@ -12,6 +12,7 @@
 #' @param deltaCutoff stop interating of the model improvement is less than deltaCutoff 
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
 #' @param verbose Default TRUE. Print messages
+#' @param ... additional arguements
 #' 
 #' @return list with formula of final model, and trace of iterations during model selection
 #' @examples
@@ -26,9 +27,13 @@
 #' @import variancePartition
 #' @importFrom stats as.formula
 #' @export
-mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff = 10, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=TRUE  ){
+mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff = 10, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=TRUE,...  ){
 
 	nparamsMethod = match.arg(nparamsMethod)
+
+	if( ! is.data.frame(data) ){
+		data = as.data.frame(data, stringsAsFactors=FALSE)
+	}
 
 	# score base model
 	suppressWarnings({
@@ -52,14 +57,14 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 
 		# evaluate score of each potential model
 		score = lapply( variables, function(feature){
-			if( verbose ) message(paste("\tevaluating: +", feature))
+			if( verbose ) message(paste("\r\tevaluating: +", feature), appendLF=FALSE)
 
 			# formula of model to try
 			form = as.formula(paste(paste0(baseFormula, collapse=' '), "+", feature))
 
 			suppressWarnings({
 			# evaluate multivariate BIC
-			mvBIC_fit( exprObj, form, data, nparamsMethod=nparamsMethod, verbose=FALSE)
+			mvBIC_fit( exprObj, form, data, nparamsMethod=nparamsMethod, verbose=FALSE, ...)
 			})
 			})
 
@@ -68,7 +73,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 
 		# get difference between best and second best score
 		delta = as.numeric(score[[i]] - baseScore)
-		if( verbose ) message("Best model delta: ", format(delta, digits=2))	
+		if( verbose ) message("\nBest model delta: ", format(delta, digits=2))	
 
 		# save results
 		resultsList$iter = c(resultsList$iter, rep(iteration, length(score)))
@@ -130,6 +135,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 #' @param data data.frame with columns corresponding to formula
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
 #' @param verbose Default TRUE. Print messages
+#' @param ... additional arguements
 #'
 #' @description
 #' Evaluate multivariate BIC while considering correlation between response variables. For n samples, p responses and m parameters for each model, evaluate the multivariate BIC as \deqn{n * logDet(\Sigma) + log(n) * (p*m + 0.5*p*(p+1))}
@@ -161,9 +167,13 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 #' @import variancePartition 
 #'
 #' @export
-mvBIC_fit = function( exprObj, formula, data, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE ){
+mvBIC_fit = function( exprObj, formula, data, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE, ... ){
 
 	nparamsMethod = match.arg(nparamsMethod)
+
+	if( ! is.data.frame(data) ){
+		data = as.data.frame(data, stringsAsFactors=FALSE)
+	}
 
 	# fit model and compute residuals
 	suppressWarnings({
@@ -190,7 +200,7 @@ mvBIC_fit = function( exprObj, formula, data, nparamsMethod = c("edf", "countLev
 		m <- nparam( fitList, nparamsMethod=nparamsMethod)
 	}
 	
-	mvBIC_from_residuals( residMatrix, m )
+	mvBIC_from_residuals( residMatrix, m, ... )
 }	
 
 
@@ -310,6 +320,7 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 #'
 #' @param fitList list of model fits with \code{lm()} or \code{lmer()}.  All models must have same data, response and formula.
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
+#' @param ... additional arguements
 #'
 #' @description
 #' Evaluate multivariate BIC while considering correlation between response variables. For n samples, p responses and m parameters for each model, evaluate the multivariate BIC as \deqn{n * logDet(\Sigma) + log(n) * (p*m + 0.5*p*(p+1))}
@@ -339,7 +350,7 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 #' 
 #' @importFrom methods is
 #' @export
-mvBIC = function( fitList, nparamsMethod = c("edf", "countLevels", "lme4") ){
+mvBIC = function( fitList, nparamsMethod = c("edf", "countLevels", "lme4"), ...){
 
 	nparamsMethod = match.arg(nparamsMethod)
 
@@ -349,58 +360,112 @@ mvBIC = function( fitList, nparamsMethod = c("edf", "countLevels", "lme4") ){
 	# get number of parameters for multiple forms of fitList
 	m = nparam( fitList, nparamsMethod=nparamsMethod )
 
-	mvBIC_from_residuals( residMatrix, m )
+	mvBIC_from_residuals( residMatrix, m, ...)
 }
 
 
 
-##' Evaluate multivariate BIC from matrix of residuals
-##'
-##' Evaluate multivariate BIC from matrix of residuals
-##' 
-##' @param residMatrix matrix of residuals where rows are features
-##' @param m number of parameters for each model
-##' 
-mvBIC_from_residuals = function( residMatrix, m ){
+#' Evaluate multivariate BIC from matrix of residuals
+#'
+#' Evaluate multivariate BIC from matrix of residuals
+#' 
+#' @param residMatrix matrix of residuals where rows are features
+#' @param m number of parameters for each model
+#' @param useMVBIC (development only, do not change)
+#' 
+#' @importFrom methods new
+mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE ){
 
 	n = ncol(residMatrix) # number of samples
 	p = nrow(residMatrix) # number of response variables
 
-	# compute log determinant explicitly
-	# slower and not defined for low rank matrices
-	# dataTerm = n * determinant(crossprod(residMatrix), log=TRUE)$modulus[1]
+	if( useMVBIC ){
+		# compute log determinant explicitly
+		# slower and not defined for low rank matrices
+		# dataTerm = n * determinant(crossprod(residMatrix), log=TRUE)$modulus[1]
 
-	# Compute log det from singular values of residual matrix
-	# Much faster for large data
-	# When p > n, only considers the non-zero singular values	
-	# this is the "pseudo-determinant" as corallary to the "pseudo-inverse"
-	evalues = svd(residMatrix, nu=0, nv=0)$d^2
-	evalues = evalues[evalues > 1e-10]
-	# p = length(evalues)
-	dataTerm = n * sum(log(evalues))
+		# Compute log det from singular values of residual matrix
+		# Much faster for large data
+		# When p > n, only considers the non-zero singular values	
+		# this is the "pseudo-determinant" as corallary to the "pseudo-inverse"
+		evalues = svd(residMatrix, nu=0, nv=0)$d^2
+		evalues = evalues[evalues > 1e-10]
+		# p = length(evalues)
+		dataTerm = n * sum(log(evalues))
 
-	# Penalty term for BIC
-	# For one response the standard penalty is log(n)*m
-	# 	this just adds a log(n) to that value
-	#	but only the differences between two models is important
-	# Estimating the p x p covariance matrix requires 0.5*p*(p+1) parameters
-	penalty = log(n) * (p*m + 0.5*p*(p+1)) #- log(2*pi)*(p*m + 0.5*p*(p+1)) 
+		# Penalty term for BIC
+		# For one response the standard penalty is log(n)*m
+		# 	this just adds a log(n) to that value
+		#	but only the differences between two models is important
+		# Estimating the p x p covariance matrix requires 0.5*p*(p+1) parameters
+		penalty = log(n) * (p*m + 0.5*p*(p+1)) #- log(2*pi)*(p*m + 0.5*p*(p+1)) 
 
-	# retrun data term plus penalty
-	res = dataTerm + penalty
-	attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m))
+		# retrun data term plus penalty
+		res = dataTerm + penalty
+		attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m))
 
-	if( ! is.null( attr(m, 'nparamsMethod') )){
-		attr(res, 'nparamsMethod') = attr(m, 'nparamsMethod')
+		if( ! is.null( attr(m, 'nparamsMethod') )){
+			attr(res, 'nparamsMethod') = attr(m, 'nparamsMethod')
+		}else{
+			attr(res, 'nparamsMethod') = "lm"
+		}
 	}else{
-		attr(res, 'nparamsMethod') = "lm"
+		# Naive metric summing BIC from all models independently
+		rss = apply(residMatrix, 1, function(x) sum(x^2))
+		dataTerm = n*sum(log(rss/n))
+		penalty = log(n) * m*p
+
+		# retrun data term plus penalty
+		res = dataTerm + penalty
+		attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m))
+		attr(res, 'nparamsMethod') = "naive"
 	}
 
-	res
+	result = new("mvBIC", as.numeric(res), 
+						  nparamsMethod = attr(res, 'nparamsMethod'),
+						  params = attr(res, 'params'))
 }
 
 
-new
+#' Class mvBIC
+#'
+#' Class stores mvBIC score, method and parameter values
+#'
+#' @name mvBIC-class
+#' @rdname mvBIC-class
+#' @exportClass mvBIC
+setClass("mvBIC", representation(nparamsMethod = "character", params="data.frame"), contains="numeric")
+
+
+
+# Print mvBIC object
+#
+# Print mvBIC object
+# 
+# @param x mvBIC object
+# @export
+setMethod("print", "mvBIC", function( x ){
+
+	cat("\t\tMultivariate BIC score\n\n")
+	cat(paste("  Method:\t", x@nparamsMethod), "\n")
+	cat(paste("  Samples:\t", x@params$n, "\n"))	
+	cat(paste("  Responses:\t", x@params$p, "\n"))	
+	cat(paste("  Parameters:\t", x@params$m, "\n"))	
+	cat("  Score:\t", as.numeric(x), "\n\n")
+})
+
+
+
+# Show mvBIC object
+#
+# Show mvBIC object
+# 
+# @param object mvBIC object
+# @export
+setMethod("show", "mvBIC", function( object ){
+	print( object )
+})
+
 
 
 
