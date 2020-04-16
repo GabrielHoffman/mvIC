@@ -3,6 +3,7 @@
 <img src="https://users.hpc.mssm.edu/~hoffmg01/software/mvBIC/mvBIC_logo.png" alt="mvBIC logo" width="100px"><br>
 </div>
 
+
 # Evaluate BIC for multivariate model selection
 
 mvBIC extends the standard the standard Bayesian Information Criterion (BIC) to the case of multivariate regression.  The model fit across many response variables is evaluated and the criterion explicitly considers correlation between reponses.  mvBIC is appiciable to linear and linear mixed models.
