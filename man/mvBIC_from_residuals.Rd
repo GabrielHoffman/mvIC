@@ -4,7 +4,12 @@
 \alias{mvBIC_from_residuals}
 \title{Evaluate multivariate BIC from matrix of residuals}
 \usage{
-mvBIC_from_residuals(residMatrix, m, useMVBIC = TRUE)
+mvBIC_from_residuals(
+  residMatrix,
+  m,
+  useMVBIC = TRUE,
+  logDetMethod = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet")
+)
 }
 \arguments{
 \item{residMatrix}{matrix of residuals where rows are features}
@@ -12,6 +17,8 @@ mvBIC_from_residuals(residMatrix, m, useMVBIC = TRUE)
 \item{m}{number of parameters for each model}
 
 \item{useMVBIC}{(development only, do not change)}
+
+\item{logDetMethod}{method to compute logDet of correlation matrix for finite sample size}
 }
 \description{
 Evaluate multivariate BIC from matrix of residuals

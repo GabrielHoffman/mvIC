@@ -22,5 +22,7 @@ Depends:
 Imports:
     variancePartition,
     limma,
+    corpcor,
+    ShrinkCovMat,
     stats
 RoxygenNote: 7.1.0

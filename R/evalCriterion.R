@@ -35,9 +35,12 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 		data = as.data.frame(data, stringsAsFactors=FALSE)
 	}
 
+	# scale features (i.e. rows)
+	exprObj = scale_features( exprObj )
+
 	# score base model
 	suppressWarnings({
-	baseScore = mvBIC_fit( exprObj, baseFormula, data, nparamsMethod=nparamsMethod, verbose=FALSE)
+	baseScore = mvBIC_fit( exprObj, baseFormula, data, nparamsMethod=nparamsMethod, verbose=FALSE,...)
 	})
 
 	resultsList = list(	iter 		= c(),
@@ -372,9 +375,12 @@ mvBIC = function( fitList, nparamsMethod = c("edf", "countLevels", "lme4"), ...)
 #' @param residMatrix matrix of residuals where rows are features
 #' @param m number of parameters for each model
 #' @param useMVBIC (development only, do not change)
+#' @param logDetMethod method to compute logDet of correlation matrix for finite sample size
 #' 
 #' @importFrom methods new
-mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE ){
+mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE, logDetMethod = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet")  ){
+
+	logDetMethod = match.arg( logDetMethod )
 
 	n = ncol(residMatrix) # number of samples
 	p = nrow(residMatrix) # number of response variables
@@ -384,15 +390,10 @@ mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE ){
 		# slower and not defined for low rank matrices
 		# dataTerm = n * determinant(crossprod(residMatrix), log=TRUE)$modulus[1]
 
-		# Compute log det from singular values of residual matrix
-		# Much faster for large data
-		# When p > n, only considers the non-zero singular values	
-		# this is the "pseudo-determinant" as corallary to the "pseudo-inverse"
-		evalues = svd(residMatrix, nu=0, nv=0)$d^2
-		evalues = evalues[evalues > 1e-10]
-		# p = length(evalues)
-		dataTerm = n * sum(log(evalues))
-
+		# Evaluate logDet based on logDetMethod
+		logDet = rlogDet( residMatrix, logDetMethod )
+		dataTerm = n * logDet
+		
 		# Penalty term for BIC
 		# For one response the standard penalty is log(n)*m
 		# 	this just adds a log(n) to that value
@@ -402,7 +403,7 @@ mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE ){
 
 		# retrun data term plus penalty
 		res = dataTerm + penalty
-		attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m))
+		attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m), dataTerm=dataTerm, penalty=penalty, lambda = attr(logDet, "lambda"))
 
 		if( ! is.null( attr(m, 'nparamsMethod') )){
 			attr(res, 'nparamsMethod') = attr(m, 'nparamsMethod')
@@ -417,13 +418,13 @@ mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE ){
 
 		# retrun data term plus penalty
 		res = dataTerm + penalty
-		attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m))
+		attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m), dataTerm=dataTerm, penalty=penalty, lambda = NA)
 		attr(res, 'nparamsMethod') = "naive"
 	}
 
-	result = new("mvBIC", as.numeric(res), 
-						  nparamsMethod = attr(res, 'nparamsMethod'),
-						  params = attr(res, 'params'))
+	new("mvBIC", as.numeric(res), 
+				 nparamsMethod = attr(res, 'nparamsMethod'),
+				 params = attr(res, 'params'))
 }
 
 
@@ -451,7 +452,8 @@ setMethod("print", "mvBIC", function( x ){
 	cat(paste("  Samples:\t", x@params$n, "\n"))	
 	cat(paste("  Responses:\t", x@params$p, "\n"))	
 	cat(paste("  Parameters:\t", x@params$m, "\n"))	
-	cat("  Score:\t", as.numeric(x), "\n\n")
+	cat(paste("  lambda:\t", format(x@params$lambda, digits=3), "\n"))	
+	cat("  Score:\t", as.numeric(x), digits=3, "\n\n")
 })
 
 
