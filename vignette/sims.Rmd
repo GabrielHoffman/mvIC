@@ -178,7 +178,7 @@ resRecovery = data.table(resRecovery)
 
 ```{r plot.sims, cache=FALSE}
 # summarize 
-df = resRecovery[,data.frame(recoveryRate = sum(recovery)/length(recovery)),by=c('rho', 'k', 'p', 'm_active','method')]
+df = resRecovery[,data.frame(recoveryRate = sum(recovery)/length(recovery)),by=c('rho', 'k', 'p', 'sigFrac', 'm_active','method')]
 df$sd = with(df, sqrt(recoveryRate*(1-recoveryRate)/n_reps))
 df$up = with(df, recoveryRate + sd)
 df$down = with(df, recoveryRate - sd)
