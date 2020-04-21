@@ -104,7 +104,7 @@ m_total = 50 # total number of variables
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
 m_active_array = c(1, 2, 3)#, 4, 5)
-signalFraction = 1 #seq(.01, .99, length.out=5)
+signalFraction = seq(.01, .99, length.out=5)
 ngenes_array = c(10, 20, 100, 300)#500, 1000, 2000, 500, 10000)
 
 resRecovery = lapply(1:n_reps, function(k){
@@ -134,10 +134,8 @@ resRecovery = lapply(1:n_reps, function(k){
           Noise = rmvnorm(n, sig=Sigma)
 
           eta = X[,1:m,drop=FALSE] %*% beta 
-          # sigFrac = .3
-          # fctr = var(eta[1,])* (1-sigFrac)/sigFrac
-          fctr = 1
-          
+          fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
+
           Y = eta + Noise*fctr
           # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
 
@@ -165,6 +163,7 @@ resRecovery = lapply(1:n_reps, function(k){
                       rho = rho,
                       k = k,
                       p = p,
+                      sigFrac = sigFrac,
                       m_active = m_active)
         })
         do.call(rbind, resRecovery)
@@ -186,7 +185,7 @@ df$down = with(df, recoveryRate - sd)
 
 cols = c("red", "orange", "dodgerblue", "green", "black")
 
-ggplot(df, aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab(bquote(Correlation~(rho))) + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) + facet_wrap(~m_active + p  )
+ggplot(df, aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab(bquote(Correlation~(rho))) + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) + facet_wrap(~sigFrac + p  )
 
 ```
 
