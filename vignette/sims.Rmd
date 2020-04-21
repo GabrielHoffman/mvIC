@@ -98,7 +98,7 @@ n_reps = 10
 n = 100 # number of samples
 p = 200 # number of genes
 m_active = 1 # number of variables affecting phenotype
-m_total = 20 # total number of variables
+m_total = 50 # total number of variables
 
  # summary(lm(Y~X[,1]))
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
