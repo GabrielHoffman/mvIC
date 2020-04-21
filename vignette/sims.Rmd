@@ -136,7 +136,8 @@ resRecovery = lapply(1:n_reps, function(k){
           eta = X[,1:m,drop=FALSE] %*% beta 
           # sigFrac = .3
           # fctr = var(eta[1,])* (1-sigFrac)/sigFrac
-
+          fctr = 1
+          
           Y = eta + Noise*fctr
           # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
 
