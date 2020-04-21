@@ -91,11 +91,12 @@ bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), useMVBIC=FALSE)
 library(poolr)
 library(mvBIC)
 library(ggplot2)
+library(mvtnorm)
 library(data.table)
 
 n_reps = 10   
 n = 100 # number of samples
-p = 200 # number of genes
+p = 20 # number of genes
 m = 1 # number of variables affecting phenotype
 m_total = 10 # total number of varabiles
 X = matrix(rnorm(m_total*n), n, m_total)
@@ -109,16 +110,18 @@ beta = matrix(rnorm(p*m, 10), m,p)
 resRecovery = lapply(1:n_reps, function(k){
 
   set.seed(k)
-  Noise = matrix(rnorm(n*p), n, p)
 
-  eta = X[,1:m,drop=FALSE] %*% beta 
+  resRecovery = lapply( seq(0, .95, length.out=5), function(rho){
 
-  resRecovery = lapply( seq(30, 60, length.out=8), function(s){
+    Sigma = matrix(rho, p,p)
+    diag(Sigma) = 1
+    Noise = rmvnorm(n, sig=Sigma)
 
-    Y = eta + Noise*s
+    eta = X[,1:m,drop=FALSE] %*% beta 
+    Y = eta + Noise
 
     # get effective sample dimension
-    dim_eff = meff(cor(Y), method="nyholt")      
+    # dim_eff = meff(cor(Y), method="nyholt")      
 
     message("\rk = ", k, '  s = ', format(s, digits=2), '  meff = ', dim_eff, '    ')   
 
@@ -143,7 +146,7 @@ resRecovery = lapply(1:n_reps, function(k){
 
     data.frame( method = c(paste("mvBIC", methods, sep=' - '), 'naive'),
                 recovery = c(res, result_naive),
-                s = s,
+                rho = rho,
                 k = k,
                 dim_eff = dim_eff)
   })
@@ -162,7 +165,7 @@ df$down = with(df, recoveryRate - sd)
 
 cols = c("red", "orange", "dodgerblue", "green", "black")
 
-ggplot(df, aes(jitter(s), recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab("Correlation parameter") + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) 
+ggplot(df, aes(jitter(rho), recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab("Correlation parameter") + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) 
 
 ```
 
