@@ -80,7 +80,6 @@ beta = matrix(rnorm(m*p, 10), m,p)
 Noise = matrix(rnorm(n*p), n, p)
 Y = X[,1:m] %*% beta + Noise
 trueSet = sort(colnames(X)[1:m])
-hist(cor(t(Y)))
 
 bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X))
 
@@ -163,7 +162,7 @@ df$down = with(df, recoveryRate - sd)
 
 cols = c("red", "orange", "dodgerblue", "green", "black")
 
-ggplot(df, aes(s, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab("Correlation parameter") + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) 
+ggplot(df, aes(jitter(s), recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab("Correlation parameter") + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) 
 
 ```
 
