@@ -94,8 +94,8 @@ library(ggplot2)
 library(data.table)
 
 n_reps = 2   
-n = 500 # number of samples
-p = 20 # number of genes
+n = 100 # number of samples
+p = 60 # number of genes
 m = 1 # number of variables affecting phenotype
 m_total = 10 # total number of varabiles
 X = matrix(rnorm(m_total*n), n, m_total)
