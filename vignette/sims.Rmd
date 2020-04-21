@@ -140,7 +140,7 @@ resRecovery = lapply(1:n_reps, function(k){
           # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
 
           # try 3 logDet methods
-          methods = c( "Touloumis_equal", "Touloumis_unequal", "pseudodet")  #"Strimmer"
+          methods = c( "Touloumis_equal", "pseudodet")  #"Strimmer" "Touloumis_unequal"
           res = sapply( methods, function(method){
             bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method)
             # test of selected set is the true set
