@@ -35,9 +35,6 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 		data = as.data.frame(data, stringsAsFactors=FALSE)
 	}
 
-	# scale features (i.e. rows)
-	exprObj = scale_features( exprObj )
-
 	# score base model
 	suppressWarnings({
 	baseScore = mvBIC_fit( exprObj, baseFormula, data, nparamsMethod=nparamsMethod, verbose=FALSE,...)
@@ -177,6 +174,9 @@ mvBIC_fit = function( exprObj, formula, data, nparamsMethod = c("edf", "countLev
 	if( ! is.data.frame(data) ){
 		data = as.data.frame(data, stringsAsFactors=FALSE)
 	}
+
+	# scale features (i.e. rows)
+	exprObj = scale_features( exprObj )
 
 	# fit model and compute residuals
 	suppressWarnings({
@@ -453,7 +453,7 @@ setMethod("print", "mvBIC", function( x ){
 	cat(paste("  Responses:\t", x@params$p, "\n"))	
 	cat(paste("  Parameters:\t", x@params$m, "\n"))	
 	cat(paste("  lambda:\t", format(x@params$lambda, digits=3), "\n"))	
-	cat("  Score:\t", as.numeric(x), digits=3, "\n\n")
+	cat("  Score:\t", as.numeric(x), "\n\n")
 })
 
 
