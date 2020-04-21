@@ -94,64 +94,75 @@ library(ggplot2)
 library(mvtnorm)
 library(data.table)
 
-n_reps = 10   
+n_reps = 20   
 n = 100 # number of samples
 p = 200 # number of genes
-m = 2 # number of variables affecting phenotype
-m_total = 20 # total number of varabiles
-X = matrix(rnorm(m_total*n), n, m_total)
-colnames(X) = paste0('X_', 1:m_total)
-trueSet = sort(colnames(X)[1:m])
-beta = matrix(rnorm(p*m, 10), m,p)
- 
-# summary(lm(Y~X[,1]))
+m_active = 2 # number of variables affecting phenotype
+m_total = 20 # total number of variables
+
+ # summary(lm(Y~X[,1]))
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
+m_active_array = c(1, 2, 3)#, 4, 5)
+ngenes_array = c(10, 20, 100, 300)#500, 1000, 2000, 500, 10000)
 resRecovery = lapply(1:n_reps, function(k){
+  resRecovery = lapply(m_active_array, function(m_active){
 
-  set.seed(k)
+    # simulate variables
+    X = matrix(rnorm(m_total*n), n, m_active)
+    colnames(X) = paste0('X_', 1:m_active)
+    trueSet = sort(colnames(X)[1:m_active])
 
-  resRecovery = lapply( seq(0, .95, length.out=5), function(rho){
+    resRecovery = lapply(ngenes_array, function(p){
 
-    # changes correlation structure of noise. Need to change magnitude
-    Sigma = matrix(rho, p,p)
-    diag(Sigma) = 1
-    Noise = rmvnorm(n, sig=Sigma)
+      # simulate coefficient for each gene
+      beta = matrix(rnorm(p*m, 10), m,p)
 
-    eta = X[,1:m,drop=FALSE] %*% beta 
-    Y = eta + Noise
+      set.seed(k)
 
-    # get effective sample dimension
-    dim_eff = meff(cor(Y), method="nyholt")      
+      resRecovery = lapply( seq(0, .95, length.out=5), function(rho){
 
-    message("\rk = ", k, '  s = ', format(s, digits=2), '    ')   
+          # changes correlation structure of noise. Need to change magnitude
+          Sigma = matrix(rho, p,p)
+          diag(Sigma) = 1
+          Noise = rmvnorm(n, sig=Sigma)
 
-    # try 3 logDet methods
-    methods = c( "Touloumis_equal", "Touloumis_unequal", "pseudodet")  #"Strimmer"
-    res = sapply( methods, function(method){
-      bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method)
-      # test of selected set is the true set
-      vars = subset(bestModel$trace, isAdded == "yes")$variable
-      vars = as.character(vars)
-      identical( sort(vars), trueSet)
+          eta = X[,1:m,drop=FALSE] %*% beta 
+          Y = eta + Noise
+
+          message("\rk = ", k, '  rho = ', rho, '    ')   
+
+          # try 3 logDet methods
+          methods = c( "Touloumis_equal", "Touloumis_unequal", "pseudodet")  #"Strimmer"
+          res = sapply( methods, function(method){
+            bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method)
+            # test of selected set is the true set
+            vars = subset(bestModel$trace, isAdded == "yes")$variable
+            vars = as.character(vars)
+            identical( sort(vars), trueSet)
+            })
+          names(res) = methods
+        
+          # fit naive model
+          bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), useMVBIC=FALSE, verbose=FALSE)
+
+          # test of selected set is the true set
+          vars = subset(bestModelNaive$trace, isAdded == "yes")$variable
+          vars = as.character(vars)
+          result_naive = identical( sort(vars), trueSet)
+
+          data.frame( method = c(paste("mvBIC", methods, sep=' - '), 'naive'),
+                      recovery = c(res, result_naive),
+                      rho = rho,
+                      k = k,
+                      p = p,
+                      m_active = m_active)
+        })
+        do.call(rbind, resRecovery)
       })
-    names(res) = methods
-  
-    # fit naive model
-    bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), useMVBIC=FALSE, verbose=FALSE)
-
-    # test of selected set is the true set
-    vars = subset(bestModelNaive$trace, isAdded == "yes")$variable
-    vars = as.character(vars)
-    result_naive = identical( sort(vars), trueSet)
-
-    data.frame( method = c(paste("mvBIC", methods, sep=' - '), 'naive'),
-                recovery = c(res, result_naive),
-                rho = rho,
-                k = k,
-                dim_eff = dim_eff)
-  })
-  do.call(rbind, resRecovery)
+      do.call(rbind, resRecovery)
+    })
+    do.call(rbind, resRecovery)
 })
 resRecovery = do.call(rbind, resRecovery)
 resRecovery = data.table(resRecovery)
@@ -159,14 +170,14 @@ resRecovery = data.table(resRecovery)
 
 ```{r plot.sims, cache=FALSE}
 # summarize 
-df = resRecovery[,data.frame(recoveryRate = sum(recovery)/length(recovery), meff = dim_eff ),by=c('rho', 'method')]
+df = resRecovery[,data.frame(recoveryRate = sum(recovery)/length(recovery)),by=c('rho', 'k', 'p', 'm_active','method')]
 df$sd = with(df, sqrt(recoveryRate*(1-recoveryRate)/n_reps))
 df$up = with(df, recoveryRate + sd)
 df$down = with(df, recoveryRate - sd)
 
 cols = c("red", "orange", "dodgerblue", "green", "black")
 
-ggplot(df, aes(jitter(rho), recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab("Correlation parameter") + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) 
+ggplot(df, aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab(bquote(Correlation~(rho))) + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) + facet_wrap(~m_active + p  )
 
 ```
 
