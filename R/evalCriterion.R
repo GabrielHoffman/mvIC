@@ -57,7 +57,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 
 		# evaluate score of each potential model
 		score = lapply( variables, function(feature){
-			if( verbose ) message(paste("\r\tevaluating: +", feature), appendLF=FALSE)
+			if( verbose ) message(paste("\r\tevaluating: +", feature, '                  '), appendLF=FALSE)
 
 			# formula of model to try
 			form = as.formula(paste(paste0(baseFormula, collapse=' '), "+", feature))
