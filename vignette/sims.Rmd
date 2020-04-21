@@ -126,7 +126,7 @@ resRecovery = lapply(1:n_reps, function(k){
     # try 3 logDet methods
     methods = c( "Strimmer", "Touloumis_equal", "Touloumis_unequal", "pseudodet")  
     res = sapply( methods, function(method){
-      bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X)[1:10], verbose=FALSE, logDetMethod=method)
+      bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method)
       # test of selected set is the true set
       vars = subset(bestModel$trace, isAdded == "yes")$variable
       vars = as.character(vars)
