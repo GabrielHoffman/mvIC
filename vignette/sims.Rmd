@@ -93,9 +93,9 @@ library(mvBIC)
 library(ggplot2)
 library(data.table)
 
-n_reps = 2   
+n_reps = 10   
 n = 100 # number of samples
-p = 60 # number of genes
+p = 200 # number of genes
 m = 1 # number of variables affecting phenotype
 m_total = 10 # total number of varabiles
 X = matrix(rnorm(m_total*n), n, m_total)
@@ -123,7 +123,7 @@ resRecovery = lapply(1:n_reps, function(k){
     message("\rk = ", k, '  s = ', format(s, digits=2), '  meff = ', dim_eff, '    ')   
 
     # try 3 logDet methods
-    methods = c( "Strimmer", "Touloumis_equal", "Touloumis_unequal", "pseudodet")  
+    methods = c( "Touloumis_equal", "Touloumis_unequal", "pseudodet")  #"Strimmer"
     res = sapply( methods, function(method){
       bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method)
       # test of selected set is the true set
