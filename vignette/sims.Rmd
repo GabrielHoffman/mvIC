@@ -32,8 +32,8 @@ devtools::reload("/Users/gabrielhoffman/workspace/repos/mvBIC")
 
 
 # run analysis
-# cd /Users/gabrielhoffman/workspace/repos/pinnacle/vignettes
-# cd /hpc/users/hoffmg01/work/pinnacle/vignettes
+# cd /Users/gabrielhoffman/workspace/repos/mvBIC/vignettes
+# cd /hpc/users/hoffmg01/build2/mvBIC/vignettes
  rmarkdown::render("sims.Rmd", output_dir='./', intermediates_dir='./')
 
  --->
@@ -97,8 +97,8 @@ library(data.table)
 n_reps = 10   
 n = 100 # number of samples
 p = 200 # number of genes
-m = 1 # number of variables affecting phenotype
-m_total = 10 # total number of varabiles
+m = 2 # number of variables affecting phenotype
+m_total = 20 # total number of varabiles
 X = matrix(rnorm(m_total*n), n, m_total)
 colnames(X) = paste0('X_', 1:m_total)
 trueSet = sort(colnames(X)[1:m])
@@ -122,9 +122,9 @@ resRecovery = lapply(1:n_reps, function(k){
     Y = eta + Noise
 
     # get effective sample dimension
-    # dim_eff = meff(cor(Y), method="nyholt")      
+    dim_eff = meff(cor(Y), method="nyholt")      
 
-    message("\rk = ", k, '  s = ', format(s, digits=2), '  meff = ', dim_eff, '    ')   
+    message("\rk = ", k, '  s = ', format(s, digits=2), '    ')   
 
     # try 3 logDet methods
     methods = c( "Touloumis_equal", "Touloumis_unequal", "pseudodet")  #"Strimmer"
