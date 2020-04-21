@@ -104,9 +104,12 @@ m_total = 20 # total number of variables
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
 m_active_array = c(1, 2, 3)#, 4, 5)
+signalFraction = 1 #seq(.01, .99, length.out=5)
 ngenes_array = c(10, 20, 100, 300)#500, 1000, 2000, 500, 10000)
+
 resRecovery = lapply(1:n_reps, function(k){
-  resRecovery = lapply(m_active_array, function(m_active){
+  # resRecovery = lapply(m_active_array, function(m_active){
+  resRecovery = lapply(signalFraction, function(sigFrac){
 
     # simulate variables
     X = matrix(rnorm(m_total*n), n, m_active)
@@ -128,7 +131,11 @@ resRecovery = lapply(1:n_reps, function(k){
           Noise = rmvnorm(n, sig=Sigma)
 
           eta = X[,1:m,drop=FALSE] %*% beta 
-          Y = eta + Noise
+          # sigFrac = .3
+          # fctr = var(eta[1,])* (1-sigFrac)/sigFrac
+
+          # Y = eta + Noise*fctr
+          # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
 
           message("\rk = ", k, '  rho = ', rho, '    ')   
 
