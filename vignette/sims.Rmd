@@ -94,10 +94,10 @@ library(ggplot2)
 library(mvtnorm)
 library(data.table)
 
-n_reps = 20   
+n_reps = 10   
 n = 100 # number of samples
 p = 200 # number of genes
-m_active = 2 # number of variables affecting phenotype
+m_active = 1 # number of variables affecting phenotype
 m_total = 20 # total number of variables
 
  # summary(lm(Y~X[,1]))
