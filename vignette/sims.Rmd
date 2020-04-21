@@ -108,6 +108,7 @@ signalFraction = 1 #seq(.01, .99, length.out=5)
 ngenes_array = c(10, 20, 100, 300)#500, 1000, 2000, 500, 10000)
 
 resRecovery = lapply(1:n_reps, function(k){
+
   # resRecovery = lapply(m_active_array, function(m_active){
   resRecovery = lapply(signalFraction, function(sigFrac){
 
@@ -117,6 +118,8 @@ resRecovery = lapply(1:n_reps, function(k){
     trueSet = sort(colnames(X)[1:m_active])
 
     resRecovery = lapply(ngenes_array, function(p){
+
+      message("\rk = ", k, '  p = ', p, '    ')   
 
       # simulate coefficient for each gene
       beta = matrix(rnorm(p*m, 10), m,p)
@@ -134,10 +137,8 @@ resRecovery = lapply(1:n_reps, function(k){
           # sigFrac = .3
           # fctr = var(eta[1,])* (1-sigFrac)/sigFrac
 
-          # Y = eta + Noise*fctr
+          Y = eta + Noise*fctr
           # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
-
-          message("\rk = ", k, '  rho = ', rho, '    ')   
 
           # try 3 logDet methods
           methods = c( "Touloumis_equal", "Touloumis_unequal", "pseudodet")  #"Strimmer"
