@@ -96,7 +96,7 @@ library(data.table)
 
 n_reps = 10   
 n = 100 # number of samples
-p = 20 # number of genes
+p = 200 # number of genes
 m = 1 # number of variables affecting phenotype
 m_total = 10 # total number of varabiles
 X = matrix(rnorm(m_total*n), n, m_total)
@@ -113,6 +113,7 @@ resRecovery = lapply(1:n_reps, function(k){
 
   resRecovery = lapply( seq(0, .95, length.out=5), function(rho){
 
+    # changes correlation structure of noise. Need to change magnitude
     Sigma = matrix(rho, p,p)
     diag(Sigma) = 1
     Noise = rmvnorm(n, sig=Sigma)
