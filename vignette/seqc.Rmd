@@ -1,0 +1,621 @@
+
+---
+title: "Apply mvBIC to SEQC data"
+subtitle: ''
+author: "Developed by [Gabriel Hoffman](http://gabrielhoffman.github.io/)"
+date: "Run on `r Sys.time()`"
+documentclass: article
+output: 
+  html_document:
+  toc: true
+  smart: false
+vignette: >
+  %\VignetteIndexEntry{Gene set enrichment from genomic intervals}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  %\usepackage[utf8]{inputenc}
+---
+
+<!--- 
+# devtools::install_github('GabrielHoffman/pinnacle', auth_token='f74018151cf7c902b57aa023b2737190e9bc0400')
+
+R CMD INSTALL -l $R_LIBS_USER ../
+
+cd /hpc/users/hoffmg01/work/mvBIC/vignettes
+module load R/3.6.0 pandoc openssl boost
+alias R='R --quiet --no-save --no-restore-data'
+R
+
+# Sys.setenv(GITHUB_PAT = "f74018151cf7c902b57aa023b2737190e9bc0400")
+
+devtools::reload("/Users/gabrielhoffman/workspace/repos/mvBIC")
+
+
+# run analysis
+# cd /Users/gabrielhoffman/workspace/repos/pinnacle/vignettes
+# cd /hpc/users/hoffmg01/work/pinnacle/vignettes
+ rmarkdown::render("seqc.Rmd", output_dir='./', intermediates_dir='./')
+
+ --->
+
+```{r load.packages, echo=FALSE, message=FALSE, results='hide'}
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(edgeR))
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(variancePartition))
+suppressPackageStartupMessages(library(GenomicRanges)) 
+suppressPackageStartupMessages(library(Matrix)) 
+suppressPackageStartupMessages(library(recount)) 
+suppressPackageStartupMessages(library(gridExtra)) 
+suppressPackageStartupMessages(library(gtable))
+suppressPackageStartupMessages(library(ggrepel))
+
+options(xtable.type="html")
+
+setDTthreads(3, restore_after_fork=FALSE)
+
+knitr::opts_chunk$set(
+  echo=FALSE,
+  warning=FALSE,
+  message=TRUE,
+  error = FALSE,
+  tidy = FALSE,
+  cache = TRUE,
+  cache.lazy = FALSE,  dev = c("png", "pdf"), 
+  fig.width=7, fig.height=7)
+
+options(markdown.HTML.stylesheet = 'css/custom.css')
+```
+
+```{r cache=FALSE}
+suppressPackageStartupMessages(library(pinnacle))
+```
+
+```{r load.recount2}
+# url <- download_study('SRP025982')
+
+## Load the data
+load(file.path('./SRP025982', 'rse_gene.Rdata'))
+## Scale counts
+rse <- scale_counts(rse_gene)
+
+# format metadata
+info = lapply(colData(rse)$characteristics, function(x){
+
+  lst = strsplit(x,':')
+  df = t(do.call(rbind, lst))
+  colnames(df) = gsub(' ', "_", df[1,])
+  gsub('^ ', "", df[2,])
+})
+info = do.call(rbind, info)
+
+info = data.frame(run = colData(rse)$run, info, stringsAsFactors=FALSE)
+```
+
+```{r differential.expression}
+# get subset of experiments from sample A
+idx = with(info, (seqc_sample %in% c('A')))
+table(idx)
+
+design = model.matrix( ~ library_id, info[idx,])
+rseSubset = rse[,idx]
+
+# filter by expression level
+isexpr = rowSums(cpm(assay(rse))>4) >= 0.8*ncol(rseSubset)
+table(isexpr)
+
+# Standard usage of limma/voom
+countObj = DGEList( assay(rseSubset)[isexpr,] )
+# convert to base ENSEMBL id's
+rownames(countObj) = sapply(strsplit(rownames(countObj), '\\.'), function(x) x[1])
+
+vobj = voom( countObj, design, plot=TRUE )
+```
+
+# Model selection with mvBIC
+```{r model.selection}
+library(mvBIC)
+
+rseSubset = rse[,idx]
+infoSub = info[idx,]
+
+# filter by expression level
+isexpr = rowSums(cpm(assay(rseSubset))>1) >= 0.2*ncol(rseSubset)
+
+# Get counts for genes and use TMM normalization
+countObj = DGEList( assay(rseSubset)[isexpr,] )
+countObj = calcNormFactors(countObj)
+
+# get log counts per million
+geneExpr = cpm( countObj, log=TRUE)
+
+# variables = c("seqc_sample", "(1|site)", "(1|site:library_id)", "(1|site/library_id/lane)", "(1|site/library_id/lane/barcode)")
+variables = c("seqc_sample", "site", "(1|site:library_id)")
+
+bestModel = mvForwardStepwise( geneExpr[1:100,], ~1, infoSub, variables)
+```
+
+do GEUVADIS, SEQC, GTEX, CMCv2 + simulations
+Compare to summing standard BIC
+
+Simulation, show probability of selection true model increases with number of features 
+# compare to sum of BIC
+
+
+devtools::reload("/Users/gabrielhoffman/workspace/repos/mvBIC")
+
+n = 100
+p = 200
+m = 1
+X = matrix(rnorm(n*p), n, p)
+colnames(X) = paste0('X_', 1:p)
+beta = matrix(rnorm(m*p, 10), m,p)
+Noise = matrix(rnorm(n*p), n, p)
+Y = X[,1:m] %*% beta + Noise
+trueSet = sort(colnames(X)[1:m])
+hist(cor(t(Y)))
+
+
+bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X))
+
+bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), useMVBIC=FALSE)
+
+
+library(poolr)
+library(mvBIC)
+library(ggplot2)
+library(data.table)
+
+n_reps = 10
+n = 100
+p = 200
+m = 1
+X = matrix(rnorm(n*p), n, p)
+colnames(X) = paste0('X_', 1:p)
+trueSet = sort(colnames(X)[1:m])
+beta = matrix(rnorm(m*p, 10), m,p)
+
+# summary(lm(Y~X[,1]))
+# lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
+
+
+resRecovery = lapply(1:n_reps, function(k){
+
+  set.seed(k)
+  Noise = matrix(rnorm(n*p), n, p)
+
+  eta = X[,1:m] %*% beta 
+
+  resRecovery = lapply( seq(30, 60, length.out=8), function(s){
+
+    Y = eta + Noise*s
+
+    # get effective sample dimension
+    dim_eff = meff(cor(Y), method="nyholt")      
+
+    cat("\rk =", k, '  s =', s, '  meff = ', dim_eff, '    ')   
+
+    # try 3 logDet methods
+    methods = c( "Strimmer", "Touloumis_equal", "Touloumis_unequal", "pseudodet")  
+    res = sapply( methods, function(method){
+      bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method)
+      # test of selected set is the true set
+      vars = subset(bestModel$trace, isAdded == "yes")$variable
+      vars = as.character(vars)
+      identical( sort(vars), trueSet)
+      })
+    names(res) = methods
+  
+    # fit naive model
+    bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), useMVBIC=FALSE, verbose=FALSE)
+
+    # test of selected set is the true set
+    vars = subset(bestModelNaive$trace, isAdded == "yes")$variable
+    vars = as.character(vars)
+    result_naive = identical( sort(vars), trueSet)
+
+    data.frame( method = c(paste("mvBIC", methods, sep=' - '), 'naive'),
+                recovery = c(res, result_naive),
+                s = s,
+                k = k,
+                dim_eff = dim_eff)
+  })
+  do.call(rbind, resRecovery)
+})
+resRecovery = do.call(rbind, resRecovery)
+resRecovery = data.table(resRecovery)
+
+# summarize 
+df = resRecovery[,data.frame(recoveryRate = sum(recovery)/length(recovery), meff = dim_eff ),by=c('s', 'method')]
+df$sd = with(df, sqrt(recoveryRate*(1-recoveryRate)/n_reps))
+df$up = with(df, recoveryRate + sd)
+df$down = with(df, recoveryRate - sd)
+
+
+cols = c("red", "orange", "dodgerblue", "green", "black")
+
+pdf("~/www/mvBIC.pdf")
+ggplot(df, aes(s, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab("Correlation parameter") + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) 
+dev.off()
+
+
+
+
+# naive
+mvBIC_fit( t(Y), ~ X_1, X, useMVBIC=FALSE)
+mvBIC_fit( t(Y), ~ X_3, X, useMVBIC=FALSE)
+
+method = "Touloumis_unequal"
+res1 = mvBIC_fit( t(Y), ~ X_1, X, logDetMethod=method)
+res1@params
+res2 = mvBIC_fit( t(Y), ~ 1, X, logDetMethod=method)
+res2@params
+res1-res2
+
+
+
+
+residMatrix1 = t(scale(residuals(lm((Y) ~ X_1, data=as.data.frame(X)))))
+residMatrix2 = t(scale(residuals(lm((Y) ~ 1, data=as.data.frame(X)))))
+
+
+mvBIC:::mvBIC_from_residuals( residMatrix1, 3 )
+mvBIC:::mvBIC_from_residuals( residMatrix2, 3 )
+
+rlogDet( residMatrix1, method="T" )
+rlogDet( residMatrix2, method="T" )
+
+rlogDet( residMatrix1, method="Str" )
+rlogDet( residMatrix2, method="Str" )
+
+rlogDet( residMatrix1, method="pseudo" )
+rlogDet( residMatrix2, method="pseudo" )
+
+
+
+res = shrinkcovmat.identity(residMatrix1)
+str(res)
+
+
+
+
+
+bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X)[1:10])
+
+method = "rlogDet"
+
+a = mvBIC_fit(t(Y), ~ X_3 , X, verbose=TRUE, logDetMethod = method)
+b = mvBIC_fit(t(Y), ~ X_10 + X_5 + X_9, X, verbose=TRUE, logDetMethod = method)
+as.numeric(a - b)    
+
+
+a = mvBIC_fit(t(svd(Y)$u), ~ X_3 , X, verbose=TRUE, logDetMethod = method)
+b = mvBIC_fit(t(svd(Y)$u), ~ X_10 + X_5 + X_9, X, verbose=TRUE, logDetMethod = method)
+as.numeric(a - b)    
+
+
+a = mvBIC_fit(t(svd(Y)$u), ~ X_3 , X, verbose=TRUE, useMVBIC=FALSE, logDetMethod = method)
+b = mvBIC_fit(t(svd(Y)$u), ~ X_10 + X_5 + X_9, X, verbose=TRUE, useMVBIC=FALSE, logDetMethod = method)
+as.numeric(a - b)    
+
+
+
+
+library(maotai)
+
+n = 5
+p = 10
+Y = matrix(rnorm(n*p), n, p)
+
+evalues = svd(Y)$d^2
+sum(log(evalues[evalues > 1e-10]))
+
+C = crossprod(Y)
+evalues = eigen(C)$values
+sum(log(evalues[evalues > 1e-10]))
+
+log(pdeterminant(C))
+
+
+
+
+
+n = 1000
+p = 50
+A = cor(matrix(rnorm(p*n),ncol=n))   # (n x n) matrix
+k = as.double(Matrix::rankMatrix(A)) # rank of A
+
+
+evalues = eigen(A)$values
+pdet = sum(log(evalues[evalues > 1e-5]))
+
+# smallest eigen-value
+# (1-sqrt(n/p))^2
+# evalues[p-1]
+
+# x = p:n
+# plot(x, (1-sqrt(n/x))^2)
+
+# iterative computation
+ntry = 11
+del.vec = exp(-(1:ntry))
+det.vec = rep(0,ntry)
+for (i in 1:ntry){
+  del = del.vec[i]
+  # det.vec[i] = det(A+del*diag(n))/(del^(n-k))
+  det.vec[i] = determinant(A+diag(del,n))$modulus[1] - (n-k)*log(del)
+}
+
+# visualize the results
+opar <- par(no.readonly=TRUE)
+plot(log(del.vec), det.vec, main=paste("true rank is ",k," out of ",n,sep=""),"b", xlab="iterations")
+abline(h=pdet,col="red",lwd=1.2)
+par(opar)
+
+
+min(eigen(A+diag(del,n))$values)
+
+
+
+finite sample size estimator for log det
+
+
+n = 200
+
+res = lapply( seq(20, 5*n, length.out=10), function(p){
+
+  logDet = sapply(1:10, function(i){
+    A = cor(matrix(rnorm(p*n),ncol=n))  
+    determinant(A)$modulus[1]
+    })
+  data.frame(logDet, p)
+})
+res = do.call(rbind, res)
+
+ggplot(res, aes(p, logDet)) + geom_point() + theme_bw()
+
+
+library(corpcor)
+library(HiDimDA)
+
+n = 500
+p = 30
+X = matrix(rnorm(p*n),ncol=n)
+A = cor(X)   # (n x n) matrix
+
+res = ShrnkSigE( df=p-1, n, min(n,p-1), Sigma=A, Trgt = "Idntty")
+res$Intst
+
+evalues = eigen(A)$values
+sum(log(evalues[evalues > 1e-10]))
+
+sum(log(res$D))
+
+sum(log(eigen(res)$values))
+
+plot(eigen(A)$values, eigen(res)$values)
+
+C = cov2cor(A)
+ev = eigen(C)$values
+
+get_lambda = function(ev, n, p){
+  a = sum(ev^2) + sum(ev)^2
+  b = n * sum(ev^2) + (p-n+1)/p * sum(ev)^2
+  a / b
+}
+lambda = get_lambda(ev, n, p)
+
+sum(log(ev*(1-lambda) + lambda))
+
+sum(log(ev))
+
+
+estimate.lambda(X)
+ c = cor.shrink(X)
+ attr(c, "lambda")
+
+
+
+library(clusterGeneration)
+library(mvtnorm)
+library(corpcor)
+library(HiDimDA)
+library(TAS)
+library(ShrinkCovMat)
+library(ggplot2)
+library(reshape2)
+library(Rfast)
+
+
+
+estLogDet = function( X, method, scale=TRUE){
+  
+  p = nrow(X)
+  n = ncol(X)
+
+  if( scale ){
+      # A = cor(X)   # (n x n) matrix
+    X_std = scale(X)/sqrt(p-1)
+  }else{
+    X_std = X
+  }
+
+  rnk = min(n, p-1)
+  # ev = eigen(A)$values
+  ev = svd(X_std)$d[1:rnk]^2
+
+  if( method == "Strimmer"){
+    lambda = estimate.lambda(X, verbose=FALSE)
+    ev_shrink = (ev*(1-lambda) + lambda)
+    ev_hat = c(ev_shrink, rep(lambda, n-length(ev_shrink)))
+  }else if( method == "gcShrink"){
+    suppressWarnings({
+    res = gcShrink(t(X), var=1, cor=1, plot=FALSE)
+    })
+    lambda = res$optimalpha
+    ev_gc = ev*(1-lambda) + lambda
+    ev_hat = c(ev_gc, rep(lambda, n-length(ev_gc)))
+  }else if( method == "ShrinkCovMat"){
+  
+    res = shrinkcovmat.identity(t(X), centered=FALSE)
+    lambda_hat = res$lambdahat
+
+    ev_shrink2 = (ev*(1-lambda_hat) + lambda_hat)
+    ev_hat = c(ev_shrink2, rep(lambda_hat, n-length(ev_shrink2)))
+  }else if( method == "ShrnkSigE"){
+
+    res = ShrnkSigE( df=p-1, n, min(n,p-1), Sigma=cor(X), Trgt = "Idntty")
+    lambda = ifelse("Intst" %in% names(res), res$Intst, 0)
+
+    ev_gc = ev*(1-lambda) + lambda
+    ev_hat = c(ev_gc, rep(lambda, n-length(ev_gc)))
+  }else if(method == "rlogDet"){
+    ev_hat = rlogDet(X)
+  }else if(method == "population"){
+    ev_hat = ev
+  }else{
+    stop("Method not found")
+  }
+
+  ev_hat
+}
+
+
+# 
+useFast = FALSE
+# n = 1000
+p_array = c(seq(50, 100, by=20), seq(120,300, by=30))
+# n_array = c(seq(4, 1500, by=100), seq(2000, 10000, by=500))
+n_array = c(seq(4, 1000, by=100))
+
+
+res = lapply( n_array, function(n){
+  cat("\rn = ", n, '      ')
+  res = lapply( p_array, function(p){
+
+    if( useFast ){
+      # construct data from eigen values
+      # evTrue = eigen(Sigma)$values
+      evTrue = sort(runif(n, 1, 1), decreasing=TRUE)
+      Q <- clusterGeneration:::genOrthogonal(n) 
+      # Sigma <- Q %*% diag(evTrue) %*% t(Q)
+      # evTrue[1:3]
+      # 
+      # R = t(Q %*% (t(Q) * sqrt(pmax(evTrue, 0))))
+      R = crossprod(sweep(Q, 1, evTrue,FUN="*"), Q)
+
+      X = matrnorm(p, n) %*% R
+      # crossprod(X)/p
+
+    }else{
+      # Generate correlation directly
+      Sigma = cov2cor(genPositiveDefMat(n, ratioLambda=100, lambdaLow=30)$Sigma)
+      evTrue = eigen(Sigma)$values
+      X = mvtnorm::rmvnorm(p, sig=Sigma)
+    }
+   
+    # logDet
+    res = data.frame( n = n,
+                      p = p,
+                      True          = sum(log(evTrue)),
+                      Population    = sum(log(estLogDet(X, "population"))),
+                      # Strimmer      = sum(log(estLogDet(X, "Strimmer"))),
+                      Strimmer       = rlogDet(X, "Strimmer"),
+                      Touloumis       = rlogDet(X, "Touloumis"))
+                      # gcShrink      = sum(log(estLogDet(X, "gcShrink"))),
+                      # ShrinkCovMat  = sum(log(estLogDet(X, "ShrinkCovMat"))))
+                      # ShrnkSigE     = sum(log(estLogDet(X, "ShrnkSigE"))))
+    res
+
+  })
+  res = do.call(rbind, res)
+})
+res = do.call(rbind, res)
+
+res2 = res
+idx = colnames(res2) %in% c('n', 'p', 'True')
+res2 = cbind(n=res2$n, p=res2$p, (res2[,!idx] - res$True))
+df = melt(res2, id.vars=c('n', 'p'))
+
+pdf("~/www/mvBIC.pdf")
+ggplot(subset(df, variable!="Population"), aes(n, value, color=variable)) + geom_point() + theme_bw() + theme(aspect.ratio=1) + ylab("Percent error") + facet_wrap(~p)
+dev.off()
+
+
+
+
+fig1 = ggplot(res, aes(True, Strimmer)) + geom_point( ) + theme_bw() + theme(aspect.ratio=1) + ylab("Percent error")
+fig2 = ggplot(res, aes(True, Touloumis)) + geom_point( ) + theme_bw() + theme(aspect.ratio=1) + ylab("Percent error")
+
+plot_grid(fig1, fig2)
+
+
+
+
+
+
+
+
+
+
+
+
+# plot(evTrue, ylim= range(c(evTrue, ev, ev_shrink, ev_gc)))
+# points(ev,col="red")
+# points(ev_shrink,col="blue")
+# points(ev_gc,col="green")
+
+# logDet
+sum(log(evTrue))
+sum(log(ev[1:(p-1)]))
+sum(log(ev_shrink))
+sum(log(ev_gc))
+rlogDet( X )
+
+
+sum(log(ev_shrink2))
+
+
+
+
+
+target = diag(1,n)
+
+obj = optimize( function(alpha) logML(t(X), target, alpha), interval=c(1e-6, 1-1e-6), tol=1e-6, maximum=TRUE)
+
+
+
+
+
+phase2_formula <- "~Dx.Tissue + (1 | Individual_ID) + RIN2 + (1 | Institution) + ageOfDeath + RIN + PMI + EV.1 + (1 | Reported_Gender) + EV.2 + EV.3 + EV.4"
+phase3 <- mvBIC::mvForwardStepwise(exprObj = subset_CQN[1:10,],
+                         baseFormula = phase2_formula, 
+                         data = COVARIATES,
+                         variables = array(c("scale(IntragenicRate)", "scale(IntronicRate)","IntergenicRate)","scale(rRNARate)", "scale(TotalReads)", "scale(GenesDetected)", "scale(MappedReads)")))
+
+
+y = subset_CQN[1,]
+phase2_formula <- "y~Dx.Tissue + (1 | Individual_ID) + RIN2 + (1 | Institution) + ageOfDeath + RIN + PMI + EV.1 + (1 | Reported_Gender) + EV.2 + EV.3 + EV.4 + scale(TotalReads)"
+
+fit = lme4::lmer(phase2_formula, COVARIATES)
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
