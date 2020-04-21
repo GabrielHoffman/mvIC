@@ -95,7 +95,7 @@ library(mvtnorm)
 library(data.table)
 
 n_reps = 10   
-n = 100 # number of samples
+n = 20 # number of samples
 p = 200 # number of genes
 m_active = 1 # number of variables affecting phenotype
 m_total = 50 # total number of variables
@@ -104,10 +104,12 @@ m_total = 50 # total number of variables
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
 m_active_array = c(1, 2, 3)#, 4, 5)
-signalFraction = seq(.01, .99, length.out=5)
-ngenes_array = c(10, 20, 100, 300)#500, 1000, 2000, 500, 10000)
+signalFraction = 1 #seq(.01, .99, length.out=5)
+ngenes_array = c(10, 20, 50, 100, 300, 500)#, 1000, 2000, 500, 10000)
 
 resRecovery = lapply(1:n_reps, function(k){
+
+  set.seed(k)
 
   # resRecovery = lapply(m_active_array, function(m_active){
   resRecovery = lapply(signalFraction, function(sigFrac){
@@ -123,10 +125,9 @@ resRecovery = lapply(1:n_reps, function(k){
 
       # simulate coefficient for each gene
       beta = matrix(rnorm(p*m, 10), m,p)
+      beta[sample.int(length(beta), length(beta)*.5)] = 0 
 
-      set.seed(k)
-
-      resRecovery = lapply( seq(0, .95, length.out=5), function(rho){
+      resRecovery = lapply( seq(0, .98, length.out=5), function(rho){
 
           # changes correlation structure of noise. Need to change magnitude
           Sigma = matrix(rho, p,p)
@@ -135,6 +136,7 @@ resRecovery = lapply(1:n_reps, function(k){
 
           eta = X[,1:m,drop=FALSE] %*% beta 
           fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
+          fctr = 1
 
           Y = eta + Noise*fctr
           # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
@@ -176,16 +178,16 @@ resRecovery = do.call(rbind, resRecovery)
 resRecovery = data.table(resRecovery)
 ```
 
-```{r plot.sims, cache=FALSE}
+```{r plot.sims, cache=FALSE, fig.width=15}
 # summarize 
-df = resRecovery[,data.frame(recoveryRate = sum(recovery)/length(recovery)),by=c('rho', 'k', 'p', 'sigFrac', 'm_active','method')]
+df = resRecovery[,data.frame(recoveryRate = sum(recovery)/length(recovery)),by=c('rho', 'p', 'sigFrac', 'm_active','method')]
 df$sd = with(df, sqrt(recoveryRate*(1-recoveryRate)/n_reps))
 df$up = with(df, recoveryRate + sd)
 df$down = with(df, recoveryRate - sd)
 
 cols = c("red", "orange", "dodgerblue", "green", "black")
 
-ggplot(df, aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab(bquote(Correlation~(rho))) + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) + facet_wrap(~sigFrac + p  )
+ggplot(df, aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab(bquote(Correlation~(rho))) + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) + facet_wrap(~p, ncol=length(ngenes_array)  )
 
 ```
 
