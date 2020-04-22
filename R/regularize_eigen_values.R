@@ -42,9 +42,10 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 	ev = svd(X, nv=0, nu=0)$d^2
 
     if( method == "Strimmer"){
-		lambda = estimate.lambda(X, verbose=FALSE)
+    	# dcmp = cov.shrink(t(X), lambda.var=0)
+		lambda = estimate.lambda(t(X), verbose=FALSE)
 
-		ev_return = (ev*(1-lambda) + lambda)
+		ev_return = (1-lambda)*ev + lambda * mean(apply(X, 2, var))
 		# Sig = cor.shrink(X_std)		
 		# ev_shrink = eigen(Sig)$values
 	}else if(method == "Touloumis_equal"){
