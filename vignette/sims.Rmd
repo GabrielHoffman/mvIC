@@ -31,11 +31,14 @@ R
 devtools::reload("/Users/gabrielhoffman/workspace/repos/mvBIC")
 
 
+
+rmarkdown::render("sims.Rmd", output_dir='./', intermediates_dir='./')
+
+
+
 # run analysis
 # cd /Users/gabrielhoffman/workspace/repos/mvBIC/vignettes
 # cd /hpc/users/hoffmg01/build2/mvBIC/vignettes
- rmarkdown::render("sims.Rmd", output_dir='./', intermediates_dir='./')
-
 
 # rm -fr sims_*
  --->
@@ -147,7 +150,7 @@ resRecovery = lapply(1:n_reps, function(k){
           # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
 
           # try 3 logDet methods
-          methods = c( "Touloumis_equal", "pseudodet")  #"Strimmer" "Touloumis_unequal"
+          methods = c( "Touloumis_equal", "Touloumis_unequal", "pseudodet")  #"Strimmer" "Touloumis_unequal"
           res = sapply( methods, function(method){
             # message(method)
             # if( k==1 & p==10 & rho==0 & signalFraction==.99) browser()
@@ -210,9 +213,9 @@ mvBIC_fit( t(Y), ~ 1, X, useMVBIC=FALSE)
 
 method = "Touloumis_equal"
 # method="pseu"
-res1 = mvBIC_fit( t(scale(Y)), ~ X_1, X, logDetMethod=method, lambda=0.317)
+res1 = mvBIC_fit( t(scale(Y)), ~ X_1, X, logDetMethod=method, lambda=lambda)
 res1@params
-res2 = mvBIC_fit( t(scale(Y)), ~ 1, X, logDetMethod=method, lambda=0.317)
+res2 = mvBIC_fit( t(scale(Y)), ~ 1, X, logDetMethod=method, lambda=lambda)
 res2@params
 res1-res2
 
@@ -238,18 +241,29 @@ rlogDet( residMatrix2, method="Str" )
 rlogDet( residMatrix1, method="pseudo" )
 rlogDet( residMatrix2, method="pseudo" )
 
-d1 = svd(residMatrix1)$d^2 + .1
-d2 = svd(residMatrix2)$d^2 + .1
+d1 = svd(residMatrix1)$d^2 
+d2 = svd(residMatrix2)$d^2 
 # plot(d1, d2, log="xy")
 
-sum(log(d1))
-sum(log(d2))
+a = sum(log(d1))
+b = sum(log(d2))
 
-
+v = sapply( 1:100, function(k){
+  a = sum(log(d1[1:k]))
+  b = sum(log(d2[1:k]))
+  a-b
+})
+plot(v)
 
 
 d1[1:3]
 adjusted_eigen_values(residMatrix1, method="p")[1:3]
+
+
+d1 = d1[1:99]
+d2 = d2[1:99]
+
+sum(log(d1))*100 - sum(log(d2))*100
 
 
 
