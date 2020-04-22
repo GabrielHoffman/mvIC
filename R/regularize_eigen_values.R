@@ -61,12 +61,12 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 		if( missing(lambda) ){
 			lambda = res$lambda_hat
 
-			message(paste("New lambda", lambda))
+			# message(paste("New lambda", lambda))
 		}else{
-			message(paste("Use recycled lambda", lambda))
+			# message(paste("Use recycled lambda", lambda))
 		} # else used passed value
 
-		message(paste("     nu = ", res$nu_hat))
+		# message(paste("     nu = ", res$nu_hat))
 
 		ev_return = (1-lambda) * ev + lambda * res$nu_hat
 

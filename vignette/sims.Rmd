@@ -109,7 +109,7 @@ m_total = 10 # total number of variables
 # m_active_array = c(1, 2, 3)#, 4, 5)
 signalFraction = seq(.2, .8, length.out=4)
 ngenes_array = c(round(seq(50, 150, length.out=3), 0), 200, 300, 500, 1000)
-rho_array = seq(0, .98, length.out=3)
+rho_array = seq(0, .98, length.out=5)
 
 resRecovery = lapply(1:n_reps, function(k){
 
@@ -125,13 +125,11 @@ resRecovery = lapply(1:n_reps, function(k){
 
     resRecovery = lapply(ngenes_array, function(p){
 
-
       # simulate coefficient for each gene
       beta = matrix(rnorm(p*m, 10), m,p)
       beta[sample.int(length(beta), length(beta)*.5)] = 0 
 
       resRecovery = lapply( rho_array, function(rho){
-
 
           message("\rk = ", k, '  p = ', p, ' rho = ', rho, '    ')  
 
@@ -210,11 +208,11 @@ ggplot(df, aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(
 mvBIC_fit( t(Y), ~ X_1, X, useMVBIC=FALSE)
 mvBIC_fit( t(Y), ~ 1, X, useMVBIC=FALSE)
 
-# method = "Touloumis_unequal"
-method="pseu"
-res1 = mvBIC_fit( t(scale(Y)), ~ X_1, X, logDetMethod=method)
+method = "Touloumis_equal"
+# method="pseu"
+res1 = mvBIC_fit( t(scale(Y)), ~ X_1, X, logDetMethod=method, lambda=0.317)
 res1@params
-res2 = mvBIC_fit( t(scale(Y)), ~ 1, X, logDetMethod=method)
+res2 = mvBIC_fit( t(scale(Y)), ~ 1, X, logDetMethod=method, lambda=0.317)
 res2@params
 res1-res2
 
@@ -249,8 +247,52 @@ ev_return = (1-lambda) * ev + lambda * res$nu_hat
 
 
 
+
+library(denoiseR)
+
+sig = estim_sigma(residMatrix1, method = "MAD")
+
+res1 = optishrink( residMatrix1, sigma = sig, method = "ASYMPT", k=ncol(residMatrix1)-1)
+sum(log(res1$singval^2))
+
+res2 = optishrink( residMatrix2, sigma = sig, method = "ASYMPT", k=ncol(residMatrix1)-1)
+sum(log(res2$singval^2))
+
+plot(svd(residMatrix1)$d, svd(residMatrix2)$d)
+plot(res1$singval[1:19], res2$singval[1:19])
+abline(0,1, col="red")
+
+# Compute delta BIC directly
+
+
+res = optishrink( residMatrix1 - residMatrix2, method="ASYMPT")
+
+d = svd(residMatrix1 - residMatrix2)$d
+sum(2*log(d[1]))
+
+d1 = svd(residMatrix1)$d^2
+d2 = svd(residMatrix2)$d^2
+adjusted_eigen_values( residMatrix1, method = "p")[1:3]
+
+
+sum(log(d1)) - sum(log(d2)) 
+
+
+C = tcrossprod(residMatrix2)
+eigen(C)$values[1:4]
+
+svd(residMatrix2)$d[1:4]^2
+
+
+
+
+
+
 res = shrinkcovmat.identity(residMatrix1)
 str(res)
+
+
+
 
 
 
