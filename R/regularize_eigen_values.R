@@ -94,8 +94,9 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 		# Much faster for large data
 		# When p > n, only considers the non-zero singular values	
 		# this is the "pseudo-determinant" as corallary to the "pseudo-inverse"
-		ev = ev + 1e-6
-		ev_return = ev[ev>1e-10]
+
+		k = ncol(X)*.9
+		ev_return = ev[1:k]
 		lambda = 0
 	}
 

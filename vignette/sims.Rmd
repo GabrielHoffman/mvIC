@@ -21,7 +21,7 @@ vignette: >
 
 R CMD INSTALL -l $R_LIBS_USER ../
 
-cd /hpc/users/hoffmg01/work/mvBIC/vignettes
+cd /hpc/users/hoffmg01/build2/mvBIC/vignette
 module load R/3.6.0 pandoc openssl boost
 alias R='R --quiet --no-save --no-restore-data'
 R
@@ -37,7 +37,7 @@ devtools::reload("/Users/gabrielhoffman/workspace/repos/mvBIC")
  rmarkdown::render("sims.Rmd", output_dir='./', intermediates_dir='./')
 
 
-
+# rm -fr sims_*
  --->
 
 ```{r load.packages, echo=FALSE, message=FALSE, results='hide'}
@@ -242,9 +242,11 @@ d1 = svd(residMatrix1)$d^2 + .1
 d2 = svd(residMatrix2)$d^2 + .1
 # plot(d1, d2, log="xy")
 
-
 sum(log(d1))
 sum(log(d2))
+
+
+
 
 d1[1:3]
 adjusted_eigen_values(residMatrix1, method="p")[1:3]
