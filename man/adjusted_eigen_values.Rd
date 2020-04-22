@@ -6,7 +6,8 @@
 \usage{
 adjusted_eigen_values(
   X,
-  method = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet")
+  method = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),
+  lambda
 )
 }
 \arguments{

@@ -8,7 +8,8 @@ mvBIC_from_residuals(
   residMatrix,
   m,
   useMVBIC = TRUE,
-  logDetMethod = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet")
+  logDetMethod = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),
+  ...
 )
 }
 \arguments{

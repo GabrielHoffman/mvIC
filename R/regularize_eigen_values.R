@@ -23,7 +23,7 @@ scale_features = function(obj){
 #' @importFrom corpcor estimate.lambda
 #' @import ShrinkCovMat
 #' @export
-adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet") ){
+adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"), lambda ){
 
 	method = match.arg(method)
 
@@ -36,7 +36,10 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 
     # get eigen-values
     # ev = svd(X_std / denom, nv=0, nu=0)$d^2    
-	ev = svd(X / sqrt(n_samples-1), nv=0, nu=0)$d^2
+	# ev = svd(X / sqrt(n_samples-1), nv=0, nu=0)$d^2
+
+	# don't scale eigen values
+	ev = svd(X, nv=0, nu=0)$d^2
 
     if( method == "Strimmer"){
 		lambda = estimate.lambda(X, verbose=FALSE)
@@ -53,8 +56,22 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 		# with __equal_ variances, 
 		 # sigmahat <- (1 - lambda_hat) * sample_covariance_matrix + diag(nu_hat * lambda_hat, p)
 		res = shrinkcovmat.equal_lambda( X )
-		lambda = res$lambda_hat
+		# message(paste("lambda:", res$lambda_hat))
+
+		if( missing(lambda) ){
+			lambda = res$lambda_hat
+
+			message(paste("New lambda", lambda))
+		}else{
+			message(paste("Use recycled lambda", lambda))
+		} # else used passed value
+
+		message(paste("     nu = ", res$nu_hat))
+
 		ev_return = (1-lambda) * ev + lambda * res$nu_hat
+
+		# return new value of lambda
+		# lambda = res$lambda_hat
 
 		# exact for equal variances
 		# res = shrinkcovmat.equal( X )
@@ -107,10 +124,10 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 #' @param method strink using either "Touloumis" or "Strimmer" method
 #'
 #' @export
-rlogDet = function( X, method=c("Touloumis_equal", "Touloumis_unequal",, "Strimmer", "pseudodet") ){
+rlogDet = function( X, method=c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),... ){
 
 	# get non-zero eigen values
-	ev = adjusted_eigen_values( X, method )
+	ev = adjusted_eigen_values( X, method,... )
 
 	# compute log determinant
 	logDet = sum(log(ev))

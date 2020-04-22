@@ -36,6 +36,8 @@ devtools::reload("/Users/gabrielhoffman/workspace/repos/mvBIC")
 # cd /hpc/users/hoffmg01/build2/mvBIC/vignettes
  rmarkdown::render("sims.Rmd", output_dir='./', intermediates_dir='./')
 
+
+
  --->
 
 ```{r load.packages, echo=FALSE, message=FALSE, results='hide'}
@@ -93,19 +95,21 @@ library(mvBIC)
 library(ggplot2)
 library(mvtnorm)
 library(data.table)
+library(CVTuningCov)
 
 n_reps = 10   
-n = 20 # number of samples
-p = 200 # number of genes
+n = 100 # number of samples
+# p = 10 # number of genes
 m_active = 1 # number of variables affecting phenotype
-m_total = 50 # total number of variables
+m_total = 10 # total number of variables
 
  # summary(lm(Y~X[,1]))
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
-m_active_array = c(1, 2, 3)#, 4, 5)
-signalFraction = 1 #seq(.01, .99, length.out=5)
-ngenes_array = c(10, 20, 50, 100, 300, 500)#, 1000, 2000, 500, 10000)
+# m_active_array = c(1, 2, 3)#, 4, 5)
+signalFraction = seq(.2, .8, length.out=4)
+ngenes_array = c(round(seq(50, 150, length.out=3), 0), 200, 300, 500, 1000)
+rho_array = seq(0, .98, length.out=3)
 
 resRecovery = lapply(1:n_reps, function(k){
 
@@ -115,28 +119,31 @@ resRecovery = lapply(1:n_reps, function(k){
   resRecovery = lapply(signalFraction, function(sigFrac){
 
     # simulate variables
-    X = matrix(rnorm(m_total*n), n, m_active)
-    colnames(X) = paste0('X_', 1:m_active)
+    X = matrix(rnorm(m_total*n), n, m_total)
+    colnames(X) = paste0('X_', 1:m_total)
     trueSet = sort(colnames(X)[1:m_active])
 
     resRecovery = lapply(ngenes_array, function(p){
 
-      message("\rk = ", k, '  p = ', p, '    ')   
 
       # simulate coefficient for each gene
       beta = matrix(rnorm(p*m, 10), m,p)
       beta[sample.int(length(beta), length(beta)*.5)] = 0 
 
-      resRecovery = lapply( seq(0, .98, length.out=5), function(rho){
+      resRecovery = lapply( rho_array, function(rho){
+
+
+          message("\rk = ", k, '  p = ', p, ' rho = ', rho, '    ')  
 
           # changes correlation structure of noise. Need to change magnitude
-          Sigma = matrix(rho, p,p)
-          diag(Sigma) = 1
+          # Sigma = matrix(rho, p,p)
+          # diag(Sigma) = 1
+          Sigma = AR1(p, rho)
           Noise = rmvnorm(n, sig=Sigma)
 
           eta = X[,1:m,drop=FALSE] %*% beta 
           fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
-          fctr = 1
+          # fctr = 10
 
           Y = eta + Noise*fctr
           # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
@@ -144,6 +151,8 @@ resRecovery = lapply(1:n_reps, function(k){
           # try 3 logDet methods
           methods = c( "Touloumis_equal", "pseudodet")  #"Strimmer" "Touloumis_unequal"
           res = sapply( methods, function(method){
+            # message(method)
+            # if( k==1 & p==10 & rho==0 & signalFraction==.99) browser()
             bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method)
             # test of selected set is the true set
             vars = subset(bestModel$trace, isAdded == "yes")$variable
@@ -171,6 +180,7 @@ resRecovery = lapply(1:n_reps, function(k){
         do.call(rbind, resRecovery)
       })
       do.call(rbind, resRecovery)
+
     })
     do.call(rbind, resRecovery)
 })
@@ -187,43 +197,55 @@ df$down = with(df, recoveryRate - sd)
 
 cols = c("red", "orange", "dodgerblue", "green", "black")
 
-ggplot(df, aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab(bquote(Correlation~(rho))) + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) + facet_wrap(~p, ncol=length(ngenes_array)  )
+ggplot(df, aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab(bquote(Correlation~(rho))) + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) + facet_wrap(~sigFrac+p, ncol=length(ngenes_array)  )
 
 ```
 
+# Using dynamic lambda
 
 
 <!---
 
 # naive
 mvBIC_fit( t(Y), ~ X_1, X, useMVBIC=FALSE)
-mvBIC_fit( t(Y), ~ X_3, X, useMVBIC=FALSE)
+mvBIC_fit( t(Y), ~ 1, X, useMVBIC=FALSE)
 
-method = "Touloumis_unequal"
-res1 = mvBIC_fit( t(Y), ~ X_1, X, logDetMethod=method)
+# method = "Touloumis_unequal"
+method="pseu"
+res1 = mvBIC_fit( t(scale(Y)), ~ X_1, X, logDetMethod=method)
 res1@params
-res2 = mvBIC_fit( t(Y), ~ 1, X, logDetMethod=method)
+res2 = mvBIC_fit( t(scale(Y)), ~ 1, X, logDetMethod=method)
 res2@params
 res1-res2
 
 
 
 
-residMatrix1 = t(scale(residuals(lm((Y) ~ X_1, data=as.data.frame(X)))))
-residMatrix2 = t(scale(residuals(lm((Y) ~ 1, data=as.data.frame(X)))))
+residMatrix1 = t(residuals(lm(scale(Y) ~ X_1, data=as.data.frame(X))))
+residMatrix2 = t(residuals(lm(scale(Y) ~ 1, data=as.data.frame(X))))
 
 
 mvBIC:::mvBIC_from_residuals( residMatrix1, 3 )
 mvBIC:::mvBIC_from_residuals( residMatrix2, 3 )
 
-rlogDet( residMatrix1, method="T" )
-rlogDet( residMatrix2, method="T" )
+rlogDet( residMatrix1, method="Touloumis_unequal" )
+rlogDet( residMatrix2, method="Touloumis_unequal" )
+
+rlogDet( residMatrix1, method="Touloumis_equal" )
+rlogDet( residMatrix2, method="Touloumis_equal" )
 
 rlogDet( residMatrix1, method="Str" )
 rlogDet( residMatrix2, method="Str" )
 
 rlogDet( residMatrix1, method="pseudo" )
 rlogDet( residMatrix2, method="pseudo" )
+
+
+res = shrinkcovmat.equal_lambda( residMatrix2 )
+# lambda = res$lambda_hat
+lambda = 0.3707678
+ev_return = (1-lambda) * ev + lambda * res$nu_hat
+
 
 
 

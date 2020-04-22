@@ -6,7 +6,8 @@
 \usage{
 rlogDet(
   X,
-  method = c("Touloumis_equal", "Touloumis_unequal", , "Strimmer", "pseudodet")
+  method = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),
+  ...
 )
 }
 \arguments{

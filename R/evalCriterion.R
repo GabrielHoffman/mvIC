@@ -38,6 +38,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 	# score base model
 	suppressWarnings({
 	baseScore = mvBIC_fit( exprObj, baseFormula, data, nparamsMethod=nparamsMethod, verbose=FALSE,...)
+	baseLambda = baseScore@params$lambda
 	})
 
 	resultsList = list(	iter 		= c(),
@@ -64,7 +65,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 
 			suppressWarnings({
 			# evaluate multivariate BIC
-			mvBIC_fit( exprObj, form, data, nparamsMethod=nparamsMethod, verbose=FALSE, ...)
+			mvBIC_fit( exprObj, form, data, nparamsMethod=nparamsMethod, verbose=FALSE, lambda=baseLambda,...)
 			})
 			})
 
@@ -95,6 +96,12 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 			# set new model, baseScore and possible variable list
 			baseFormula = as.formula(paste(paste0(baseFormula, collapse=' '), "+", variables[i]))
 			baseScore = score[[i]]
+
+			if( method == "Touloumis_equal"){
+				# re-evaluate base lambda and score
+				# baseScore = mvBIC_fit( exprObj, baseFormula, data, nparamsMethod=nparamsMethod, verbose=FALSE,...)
+				baseLambda = baseScore@params$lambda
+			}
 			variables = variables[-i]			
 			isAdded[i] = "yes"
 			resultsList$isAdded = c(resultsList$isAdded, isAdded)
@@ -378,7 +385,7 @@ mvBIC = function( fitList, nparamsMethod = c("edf", "countLevels", "lme4"), ...)
 #' @param logDetMethod method to compute logDet of correlation matrix for finite sample size
 #' 
 #' @importFrom methods new
-mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE, logDetMethod = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet")  ){
+mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE, logDetMethod = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),...  ){
 
 	logDetMethod = match.arg( logDetMethod )
 
@@ -391,7 +398,7 @@ mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE, logDetMethod =
 		# dataTerm = n * determinant(crossprod(residMatrix), log=TRUE)$modulus[1]
 
 		# Evaluate logDet based on logDetMethod
-		logDet = rlogDet( residMatrix, logDetMethod )
+		logDet = rlogDet( residMatrix, logDetMethod,... )
 		dataTerm = n * logDet
 		
 		# Penalty term for BIC
