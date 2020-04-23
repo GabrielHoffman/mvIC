@@ -81,6 +81,11 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 		# eigen(res$Sigmahat, symmetric=TRUE, only.values=TRUE)$values
 	}else if(method == "Touloumis_unequal"){
 
+		if( missing(lambda) ){
+			lambda = res$lambda_hat
+
+			# message(paste("New lambda", lambda))
+		}
 		# with __unequal__ variances,
 		# Sigmahat = (1-lambda) + U D U^T + lambda * diag(sample_variances)
 		# the eigen values cannot be extracted from D directly
