@@ -211,7 +211,7 @@ ggplot(df, aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(
 mvBIC_fit( t(Y), ~ X_1, X, useMVBIC=FALSE)
 mvBIC_fit( t(Y), ~ 1, X, useMVBIC=FALSE)
 
-method = "Touloumis_equal"
+method = "Touloumis_unequal"
 # method="pseu"
 res1 = mvBIC_fit( t(scale(Y)), ~ X_1, X, logDetMethod=method, lambda=lambda)
 res1@params
