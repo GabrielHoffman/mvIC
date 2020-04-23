@@ -95,6 +95,11 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
        		sample_variances <- apply(X, 1, var)
 			sigma_hat <- (1 - lambda) * sample_covariance_matrix + diag(lambda * sample_variances, ncol(sample_covariance_matrix))
 			ev_return = eigen(sigma_hat, symmetric=TRUE, only.values=TRUE)$values
+
+
+			# return new value of lambda
+			res = shrinkcovmat.unequal( X )
+			lambda = res$lambdahat
 		}
 	}else{
 		# Compute log det from singular values of residual matrix
