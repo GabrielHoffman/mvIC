@@ -100,7 +100,7 @@ library(mvtnorm)
 library(data.table)
 library(CVTuningCov)
 
-n_reps = 10   
+n_reps = 1000   
 n = 100 # number of samples
 # p = 10 # number of genes
 m_active = 1 # number of variables affecting phenotype
