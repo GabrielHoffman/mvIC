@@ -110,7 +110,7 @@ m_total = 10 # total number of variables
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
 # m_active_array = c(1, 2, 3)#, 4, 5)
-signalFraction = seq(.2, .8, length.out=4)
+signalFraction = c(.3, .4, .5)
 ngenes_array = c(round(seq(50, 150, length.out=3), 0), 200, 300, 500, 1000)
 rho_array = seq(0, .98, length.out=5)
 
@@ -137,9 +137,9 @@ resRecovery = lapply(1:n_reps, function(k){
           message("\rk = ", k, '  p = ', p, ' rho = ', rho, ' sigFrac =  ', sigFrac, '    ')  
 
           # changes correlation structure of noise. Need to change magnitude
-          # Sigma = matrix(rho, p,p)
-          # diag(Sigma) = 1
-          Sigma = AR1(p, rho)
+          Sigma = matrix(rho, p,p)
+          diag(Sigma) = 1
+          # Sigma = AR1(p, rho)
           Noise = rmvnorm(n, sig=Sigma)
 
           eta = X[,1:m,drop=FALSE] %*% beta 
