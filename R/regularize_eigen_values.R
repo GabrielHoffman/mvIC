@@ -92,9 +92,9 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 			ev_return = eigen(res$Sigmahat, symmetric=TRUE, only.values=TRUE)$values
 		}else{
 			sample_covariance_matrix <- cov(t(X))
+       		sample_variances <- apply(X, 1, var)
 			sigma_hat <- (1 - lambda) * sample_covariance_matrix + diag(lambda * sample_variances, ncol(sample_covariance_matrix))
 			ev_return = eigen(sigma_hat, symmetric=TRUE, only.values=TRUE)$values
-
 		}
 	}else{
 		# Compute log det from singular values of residual matrix
