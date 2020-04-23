@@ -100,6 +100,8 @@ library(mvtnorm)
 library(data.table)
 library(CVTuningCov)
 
+set.seed(1)
+
 n_reps = 1000   
 n = 100 # number of samples
 # p = 10 # number of genes
@@ -116,7 +118,7 @@ rho_array = seq(0, .98, length.out=5)
 
 resRecovery = lapply(1:n_reps, function(k){
 
-  set.seed(k)
+  # set.seed(k)
 
   # resRecovery = lapply(m_active_array, function(m_active){
   resRecovery = lapply(signalFraction, function(sigFrac){
