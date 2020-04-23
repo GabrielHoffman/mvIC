@@ -134,7 +134,7 @@ resRecovery = lapply(1:n_reps, function(k){
 
       resRecovery = lapply( rho_array, function(rho){
 
-          message("\rk = ", k, '  p = ', p, ' rho = ', rho, '    ')  
+          message("\rk = ", k, '  p = ', p, ' rho = ', rho, ' sigFrac =  ', sigFrac, '    ')  
 
           # changes correlation structure of noise. Need to change magnitude
           # Sigma = matrix(rho, p,p)

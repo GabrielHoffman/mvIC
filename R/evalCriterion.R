@@ -98,11 +98,12 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 			baseScore = score[[i]]
 
 			if( exists("method") ){
-				if( method == "Touloumis_equal"){
-				# re-evaluate base lambda and score
-				# baseScore = mvBIC_fit( exprObj, baseFormula, data, nparamsMethod=nparamsMethod, verbose=FALSE,...)
-				baseLambda = baseScore@params$lambda
-			}}
+				if( method %in% c("Touloumis_equal", "Touloumis_unequal") ){
+					# re-evaluate base lambda and score
+					# baseScore = mvBIC_fit( exprObj, baseFormula, data, nparamsMethod=nparamsMethod, verbose=FALSE,...)
+					baseLambda = baseScore@params$lambda
+				}
+			}
 			variables = variables[-i]			
 			isAdded[i] = "yes"
 			resultsList$isAdded = c(resultsList$isAdded, isAdded)

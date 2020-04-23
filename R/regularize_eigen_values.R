@@ -102,7 +102,7 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 		# When p > n, only considers the non-zero singular values	
 		# this is the "pseudo-determinant" as corallary to the "pseudo-inverse"
 
-		k = ncol(X)*.9
+		k = min(nrow(X), ncol(X))*.9
 		ev_return = ev[1:k]
 		lambda = 0
 	}
