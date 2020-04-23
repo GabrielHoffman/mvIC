@@ -82,19 +82,20 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 	}else if(method == "Touloumis_unequal"){
 
 		if( missing(lambda) ){
-			lambda = res$lambda_hat
+			# with __unequal__ variances,
+			# Sigmahat = (1-lambda) + U D U^T + lambda * diag(sample_variances)
+			# the eigen values cannot be extracted from D directly
+			# instead the full matrix must be computed
+			res = shrinkcovmat.unequal( X )
+			lambda = res$lambdahat
+			sigma_hat = res$Sigmahat
+			ev_return = eigen(res$Sigmahat, symmetric=TRUE, only.values=TRUE)$values
+		}else{
+			sample_covariance_matrix <- cov(t(X))
+			sigma_hat <- (1 - lambda) * sample_covariance_matrix + diag(lambda * sample_variances, ncol(sample_covariance_matrix))
+			ev_return = eigen(sigma_hat, symmetric=TRUE, only.values=TRUE)$values
 
-			# message(paste("New lambda", lambda))
 		}
-		# with __unequal__ variances,
-		# Sigmahat = (1-lambda) + U D U^T + lambda * diag(sample_variances)
-		# the eigen values cannot be extracted from D directly
-		# instead the full matrix must be computed
-		res = shrinkcovmat.unequal( X )
-		lambda = res$lambdahat
-		sigma_hat = res$Sigmahat
-		ev_return = eigen(res$Sigmahat, symmetric=TRUE, only.values=TRUE)$values
-
 	}else{
 		# Compute log det from singular values of residual matrix
 		# Much faster for large data
