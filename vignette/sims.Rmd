@@ -103,7 +103,7 @@ library(CVTuningCov)
 set.seed(1)
 
 n_reps = 100   
-n = 50 # number of samples
+n = 30 # number of samples
 # p = 10 # number of genes
 m_active = 1 # number of variables affecting phenotype
 m_total = 10 # total number of variables
@@ -113,7 +113,7 @@ m_total = 10 # total number of variables
 
 # m_active_array = c(1, 2, 3)#, 4, 5)
 signalFraction = seq(.4, .8, by=.1)
-ngenes_array = c(round(seq(10, 100, length.out=5), 0), 200, 300, 500)
+ngenes_array = c(round(seq(10, 100, length.out=5), 0), 200, 300, 500, 1000)
 rho_array = seq(0, .98, length.out=8)
 
 resRecovery = lapply(1:n_reps, function(k){
