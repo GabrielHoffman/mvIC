@@ -23,7 +23,8 @@ R CMD INSTALL -l $R_LIBS_USER ../
 
 source ~/.bash_profile
 cd /hpc/users/hoffmg01/build2/mvBIC/vignette
-module load R/3.6.0 pandoc openssl boost
+module load R/3.6.0 pandoc openssl boost git
+git pull 
 alias R='R --quiet --no-save --no-restore-data'
 R
 
