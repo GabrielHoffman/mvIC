@@ -158,7 +158,7 @@ resRecovery = lapply(1:n_reps, function(k){
             res = sapply( methods, function(method){
               # message(method)
               # if( k==1 & p==10 & rho==0 & signalFraction==.99) browser()
-              bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method)
+              bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method, deltaCutoff=5)
               # test of selected set is the true set
               vars = subset(bestModel$trace, isAdded == "yes")$variable
               vars = as.character(vars)
@@ -167,7 +167,7 @@ resRecovery = lapply(1:n_reps, function(k){
             names(res) = methods
           
             # fit naive model
-            bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), useMVBIC=FALSE, verbose=FALSE)
+            bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), useMVBIC=FALSE, verbose=FALSE, deltaCutoff=5)
 
             # test of selected set is the true set
             vars = subset(bestModelNaive$trace, isAdded == "yes")$variable
