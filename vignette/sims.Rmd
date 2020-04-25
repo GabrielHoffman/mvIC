@@ -79,13 +79,13 @@ devtools::reload("/Users/gabrielhoffman/workspace/repos/mvBIC")
 ```{r basic}
 n = 100
 p = 200
-m = 1
+m_active = 1
 X = matrix(rnorm(n*p), n, p)
 colnames(X) = paste0('X_', 1:p)
-beta = matrix(rnorm(m*p, 10), m,p)
+beta = matrix(rnorm(m_active*p, 10), m_active,p)
 Noise = matrix(rnorm(n*p), n, p)
-Y = X[,1:m] %*% beta + Noise
-trueSet = sort(colnames(X)[1:m])
+Y = X[,1:m_active] %*% beta + Noise
+trueSet = sort(colnames(X)[1:m_active])
 
 bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X))
 
@@ -103,88 +103,89 @@ library(CVTuningCov)
 
 set.seed(1)
 
-n_reps = 20   
-n = 50 # number of samples
+n_reps = 10   
+n = 30 # number of samples
 # p = 10 # number of genes
-m_active = 2 # number of variables affecting phenotype
+# m_active = 2 # number of variables affecting phenotype
 m_total = 10 # total number of variables
 
  # summary(lm(Y~X[,1]))
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
-# m_active_array = c(1, 2, 3)#, 4, 5)
-signalFraction = .95#seq(.4, .8, by=.1)
-ngenes_array = c(round(seq(10, 100, length.out=5), 0), 200, 300, 500, 1000)
-rho_array = seq(0, .98, length.out=8)
+m_active_array = c(1, 2, 3)
+signalFraction = .8#seq(.4, .8, by=.1)
+ngenes_array = c(round(seq(10, 100, length.out=5), 0), 200, 300)
+rho_array = seq(0, .98, length.out=5)
 
 resRecovery = lapply(1:n_reps, function(k){
 
   # set.seed(k)
 
-  # resRecovery = lapply(m_active_array, function(m_active){
-  resRecovery = lapply(signalFraction, function(sigFrac){
+  resRecovery = lapply(m_active_array, function(m_active){
+    resRecovery = lapply(signalFraction, function(sigFrac){
 
-    # simulate variables
-    X = matrix(rnorm(m_total*n), n, m_total)
-    colnames(X) = paste0('X_', 1:m_total)
-    trueSet = sort(colnames(X)[1:m_active])
+      # simulate variables
+      X = matrix(rnorm(m_total*n), n, m_total)
+      colnames(X) = paste0('X_', 1:m_total)
+      trueSet = sort(colnames(X)[1:m_active])
 
-    resRecovery = lapply(ngenes_array, function(p){
+      resRecovery = lapply(ngenes_array, function(p){
 
-      # simulate coefficient for each gene
-      beta = matrix(rnorm(p*m, 10), m,p)
-      beta[sample.int(length(beta), length(beta)*.5)] = 0 
+        # simulate coefficient for each gene
+        beta = matrix(rnorm(p*m_active, 10), m_active,p)
+        beta[sample.int(length(beta), length(beta)*.5)] = 0 
 
-      resRecovery = lapply( rho_array, function(rho){
+        resRecovery = lapply( rho_array, function(rho){
 
-          message("\rk = ", k, '  p = ', p, ' rho = ', rho, ' sigFrac =  ', sigFrac, '    ')  
+            message("\rk = ", k, '  p = ', p, ' rho = ', rho, ' sigFrac =  ', sigFrac,  ' m_active = ', m_active, '        ')  
 
-          # changes correlation structure of noise. Need to change magnitude
-          # Sigma = matrix(rho, p,p)
-          # diag(Sigma) = 1
-          Sigma = AR1(p, rho)
-          Noise = rmvnorm(n, sig=Sigma)
+            # changes correlation structure of noise. Need to change magnitude
+            # Sigma = matrix(rho, p,p)
+            # diag(Sigma) = 1
+            Sigma = AR1(p, rho)
+            Noise = rmvnorm(n, sig=Sigma)
 
-          eta = X[,1:m,drop=FALSE] %*% beta 
-          fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
-          # fctr = 10
+            eta = X[,1:m_active,drop=FALSE] %*% beta 
+            fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
+            # fctr = 10
 
-          Y = eta + Noise*fctr
-          # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
+            Y = eta + Noise*fctr
+            # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
 
-          # try 3 logDet methods
-          methods = c( "Touloumis_equal", "Touloumis_unequal", "pseudodet")  #"Strimmer" "Touloumis_unequal"
-          res = sapply( methods, function(method){
-            # message(method)
-            # if( k==1 & p==10 & rho==0 & signalFraction==.99) browser()
-            bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method)
+            # try 3 logDet methods
+            methods = c( "Touloumis_equal", "Touloumis_unequal", "pseudodet")  #"Strimmer" "Touloumis_unequal"
+            res = sapply( methods, function(method){
+              # message(method)
+              # if( k==1 & p==10 & rho==0 & signalFraction==.99) browser()
+              bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method)
+              # test of selected set is the true set
+              vars = subset(bestModel$trace, isAdded == "yes")$variable
+              vars = as.character(vars)
+              identical( sort(vars), trueSet)
+              })
+            names(res) = methods
+          
+            # fit naive model
+            bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), useMVBIC=FALSE, verbose=FALSE)
+
             # test of selected set is the true set
-            vars = subset(bestModel$trace, isAdded == "yes")$variable
+            vars = subset(bestModelNaive$trace, isAdded == "yes")$variable
             vars = as.character(vars)
-            identical( sort(vars), trueSet)
-            })
-          names(res) = methods
-        
-          # fit naive model
-          bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), useMVBIC=FALSE, verbose=FALSE)
+            result_naive = identical( sort(vars), trueSet)
 
-          # test of selected set is the true set
-          vars = subset(bestModelNaive$trace, isAdded == "yes")$variable
-          vars = as.character(vars)
-          result_naive = identical( sort(vars), trueSet)
-
-          data.frame( method = c(paste("mvBIC", methods, sep=' - '), 'naive'),
-                      recovery = c(res, result_naive),
-                      rho = rho,
-                      k = k,
-                      p = p,
-                      sigFrac = sigFrac,
-                      m_active = m_active)
+            data.frame( method = c(paste("mvBIC", methods, sep=' - '), 'naive'),
+                        recovery = c(res, result_naive),
+                        rho = rho,
+                        k = k,
+                        p = p,
+                        sigFrac = sigFrac,
+                        m_active = m_active)
+          })
+          do.call(rbind, resRecovery)
         })
         do.call(rbind, resRecovery)
       })
-      do.call(rbind, resRecovery)
-
+    do.call(rbind, resRecovery)
     })
     do.call(rbind, resRecovery)
 })
@@ -211,7 +212,7 @@ ggplot(df, aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(
 <!---
 
 # naive
-mvBIC_fit( t(Y), ~ X_1, X, useMVBIC=FALSE)
+mvBIC_fit( t(Y), ~ X_1 + X, X, useMVBIC=FALSE)
 mvBIC_fit( t(Y), ~ 1, X, useMVBIC=FALSE)
 
 method = "Touloumis_unequal"
