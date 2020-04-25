@@ -104,8 +104,8 @@ library(CVTuningCov)
 
 set.seed(1)
 
-n_reps = 10   
-n = 25 # number of samples
+n_reps = 20   
+n = 100 # number of samples
 # p = 10 # number of genes
 # m_active = 2 # number of variables affecting phenotype
 m_total = 10 # total number of variables
@@ -154,7 +154,7 @@ resRecovery = lapply(1:n_reps, function(k){
             # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
 
             # try 3 logDet methods
-            methods = c( "Touloumis_equal", "Touloumis_unequal", "pseudodet")  #"Strimmer" "Touloumis_unequal"
+            methods = c( "Touloumis_unequal", "pseudodet")  #"Strimmer" "Touloumis_equal"
             res = sapply( methods, function(method){
               # message(method)
               # if( k==1 & p==10 & rho==0 & signalFraction==.99) browser()
