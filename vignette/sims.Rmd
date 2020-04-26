@@ -101,6 +101,7 @@ library(ggplot2)
 library(mvtnorm)
 library(data.table)
 library(CVTuningCov)
+library(Matrix)
 
 set.seed(1)
 
@@ -109,12 +110,13 @@ n = 100 # number of samples
 # p = 10 # number of genes
 # m_active = 2 # number of variables affecting phenotype
 m_total = 10 # total number of variables
+n_clusters = 5
 
  # summary(lm(Y~X[,1]))
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
 m_active_array = c(1, 2, 3)
-signalFraction = .6#seq(.4, .8, by=.1)
+signalFraction = .7#seq(.4, .8, by=.1)
 ngenes_array = c(round(seq(10, 100, length.out=5), 0), 200, 500)
 rho_array = seq(0, .98, length.out=5)
 
@@ -140,9 +142,17 @@ resRecovery = lapply(1:n_reps, function(k){
 
             message("\rk = ", k, '  p = ', p, ' rho = ', rho, ' sigFrac =  ', sigFrac,  ' m_active = ', m_active, '        ')  
 
-            # changes correlation structure of noise. Need to change magnitude
-            Sigma = matrix(rho, p,p)
-            diag(Sigma) = 1
+            # changes correlation structure of noise. 
+            clustID = sample.int(n_clusters, p, replace=TRUE)
+
+            sigList = lapply(unique(clustID), function(id){
+              count = sum(clustID == id)                
+              Sigma = matrix(rho, count, count)
+              diag(Sigma) = 1
+              Sigma
+              })
+            Sigma = as.matrix(bdiag(sigList))
+
             # Sigma = AR1(p, rho)
             Noise = rmvnorm(n, sig=Sigma)
 
