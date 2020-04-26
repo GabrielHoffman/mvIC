@@ -134,6 +134,8 @@ resRecovery = lapply(1:n_reps, function(k){
 
       resRecovery = lapply(ngenes_array, function(p){
 
+        clustID = sample.int(n_clusters, p, replace=TRUE)
+
         # simulate coefficient for each gene
         beta = matrix(rnorm(p*m_active, 10), m_active,p)
         beta[sample.int(length(beta), length(beta)*.5)] = 0 
@@ -143,8 +145,6 @@ resRecovery = lapply(1:n_reps, function(k){
             message("\rk = ", k, '  p = ', p, ' rho = ', rho, ' sigFrac =  ', sigFrac,  ' m_active = ', m_active, '        ')  
 
             # changes correlation structure of noise. 
-            clustID = sample.int(n_clusters, p, replace=TRUE)
-
             sigList = lapply(unique(clustID), function(id){
               count = sum(clustID == id)                
               Sigma = matrix(rho, count, count)
