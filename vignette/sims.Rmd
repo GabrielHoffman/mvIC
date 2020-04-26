@@ -116,9 +116,9 @@ n_clusters = 5
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
 m_active_array = c(1, 2, 3)
-signalFraction = .7#seq(.4, .8, by=.1)
-ngenes_array = c(round(seq(10, 100, length.out=5), 0), 200, 500)
-rho_array = seq(0, .98, length.out=5)
+signalFraction = seq(.1, .9, by=.1)
+ngenes_array = c(round(seq(10, 100, length.out=5), 0), 200, 500, 1000)
+rho_array = seq(0, .98, length.out=8)
 
 resRecovery = lapply(1:n_reps, function(k){
 
