@@ -412,7 +412,8 @@ mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE, logDetMethod =
 		# penalty = log(n) * (p*m + 0.5*p*(p+1)) #- log(2*pi)*(p*m + 0.5*p*(p+1)) 
 
 		df_cov = attr(logDet, "gdf")
-		penalty = log(n) * (p*m + df_cov)
+		# penalty = log(n) * (p*m + df_cov)
+		penalty = 2 * (p*m + df_cov)
 
 		# retrun data term plus penalty
 		res = dataTerm + penalty

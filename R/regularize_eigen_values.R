@@ -98,7 +98,7 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 			# Sigmahat = (1-lambda) + U D U^T + lambda * diag(sample_variances)
 			# the eigen values cannot be extracted from D directly
 			# instead the full matrix must be computed
-			res = shrinkcovmat.unequal( X )
+			res = shrinkcovmat.unequal( X, centered=TRUE)
 			lambda = res$lambdahat
 			sigma_hat = res$Sigmahat
 			ev_return = eigen(res$Sigmahat, symmetric=TRUE, only.values=TRUE)$values
@@ -136,7 +136,7 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
     # 	# get shrinkage parameter
     # 	# res = cor.shrink( X_std )
     # 	"Strimmer" 	= estimate.lambda(X_std, verbose=FALSE),
-    # 	"Touloumis" = min(get_lambda.Touloumis( t(X) ), .99) )    
+    # 	"Touloumis" = min(get_lambda.Touloumis( t(X) ), .99) )     
 
     # get strunk eigen-values
     # ev_shrink = (ev*(1-lambda) + lambda)
