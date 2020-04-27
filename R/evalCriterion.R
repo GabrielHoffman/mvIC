@@ -395,7 +395,7 @@ mvBIC_from_residuals = function( residMatrix, m, criterion ="AIC", logDetMethod 
 	n = ncol(residMatrix) # number of samples
 	p = nrow(residMatrix) # number of response variables
 
-	if( criterion != "sum BIC" ){
+	if( ! criterion %in% c("sum AIC","sum BIC") ){
 		# compute log determinant explicitly
 		# slower and not defined for low rank matrices
 		# dataTerm = n * determinant(crossprod(residMatrix), log=TRUE)$modulus[1]
@@ -441,7 +441,11 @@ mvBIC_from_residuals = function( residMatrix, m, criterion ="AIC", logDetMethod 
 		# Naive metric summing BIC from all models independently
 		rss = apply(residMatrix, 1, function(x) sum(x^2))
 		dataTerm = n*sum(log(rss/n))
-		penalty = log(n) * m*p
+
+		penalty = switch(criterion, 
+						"sum AIC" = 2 * m*p,
+						"sum BIC" = log(n) * m*p)
+		
 
 		# retrun data term plus penalty
 		res = dataTerm + penalty
@@ -452,7 +456,7 @@ mvBIC_from_residuals = function( residMatrix, m, criterion ="AIC", logDetMethod 
 											penalty 	= penalty, 
 											lambda 		= NA, 
 											df_cov 		= NA,
-											criterion 	= "sum BIC", 
+											criterion 	= criterion, 
 											stringsAsFactors=FALSE)
 		attr(res, 'nparamsMethod') = "naive"
 	}

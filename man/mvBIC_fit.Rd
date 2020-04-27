@@ -8,6 +8,7 @@ mvBIC_fit(
   exprObj,
   formula,
   data,
+  criterion = "AIC",
   nparamsMethod = c("edf", "countLevels", "lme4"),
   verbose = FALSE,
   ...

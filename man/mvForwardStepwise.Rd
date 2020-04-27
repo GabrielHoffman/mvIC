@@ -9,6 +9,7 @@ mvForwardStepwise(
   baseFormula,
   data,
   variables,
+  criterion = "AIC",
   deltaCutoff = 10,
   nparamsMethod = c("edf", "countLevels", "lme4"),
   verbose = TRUE,

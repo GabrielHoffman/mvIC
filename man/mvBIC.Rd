@@ -4,7 +4,12 @@
 \alias{mvBIC}
 \title{Evaluate multivariate BIC}
 \usage{
-mvBIC(fitList, nparamsMethod = c("edf", "countLevels", "lme4"), ...)
+mvBIC(
+  fitList,
+  criterion = "AIC",
+  nparamsMethod = c("edf", "countLevels", "lme4"),
+  ...
+)
 }
 \arguments{
 \item{fitList}{list of model fits with \code{lm()} or \code{lmer()}.  All models must have same data, response and formula.}
