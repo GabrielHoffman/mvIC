@@ -38,7 +38,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 	# score base model
 	suppressWarnings({
 	baseScore = mvBIC_fit( exprObj, baseFormula, data, nparamsMethod=nparamsMethod, verbose=FALSE,...)
-	baseLambda = baseScore@params$lambda
+	# baseLambda = baseScore@params$lambda
 	})
 
 	resultsList = list(	iter 		= c(),
@@ -65,7 +65,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 
 			suppressWarnings({
 			# evaluate multivariate BIC
-			mvBIC_fit( exprObj, form, data, nparamsMethod=nparamsMethod, verbose=FALSE, lambda=baseLambda,...)
+			mvBIC_fit( exprObj, form, data, nparamsMethod=nparamsMethod, verbose=FALSE, ...)#, lambda=baseLambda,...)
 			})
 			})
 
@@ -101,7 +101,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 				if( method %in% c("Touloumis_equal", "Touloumis_unequal") ){
 					# re-evaluate base lambda and score
 					# baseScore = mvBIC_fit( exprObj, baseFormula, data, nparamsMethod=nparamsMethod, verbose=FALSE,...)
-					baseLambda = baseScore@params$lambda
+					# baseLambda = baseScore@params$lambda
 				}
 			}
 			variables = variables[-i]			
@@ -408,11 +408,14 @@ mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE, logDetMethod =
 		# 	this just adds a log(n) to that value
 		#	but only the differences between two models is important
 		# Estimating the p x p covariance matrix requires 0.5*p*(p+1) parameters
-		penalty = log(n) * (p*m + 0.5*p*(p+1)) #- log(2*pi)*(p*m + 0.5*p*(p+1)) 
+		# penalty = log(n) * (p*m + 0.5*p*(p+1)) #- log(2*pi)*(p*m + 0.5*p*(p+1)) 
+
+		df_cov = attr(logDet, "gdf")
+		penalty = log(n) * (p*m + df_cov)
 
 		# retrun data term plus penalty
 		res = dataTerm + penalty
-		attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m), dataTerm=dataTerm, penalty=penalty, lambda = attr(logDet, "lambda"))
+		attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m), dataTerm=dataTerm, penalty=penalty, lambda = attr(logDet, "lambda"), df_cov = df_cov)
 
 		if( ! is.null( attr(m, 'nparamsMethod') )){
 			attr(res, 'nparamsMethod') = attr(m, 'nparamsMethod')
@@ -427,7 +430,7 @@ mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE, logDetMethod =
 
 		# retrun data term plus penalty
 		res = dataTerm + penalty
-		attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m), dataTerm=dataTerm, penalty=penalty, lambda = NA)
+		attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m), dataTerm=dataTerm, penalty=penalty, lambda = NA, df_cov = NA)
 		attr(res, 'nparamsMethod') = "naive"
 	}
 

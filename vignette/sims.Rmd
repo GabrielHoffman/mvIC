@@ -106,7 +106,7 @@ library(Matrix)
 set.seed(1)
 
 n_reps = 20   
-n = 100 # number of samples
+n = 300 # number of samples
 # p = 10 # number of genes
 # m_active = 2 # number of variables affecting phenotype
 m_total = 10 # total number of variables
@@ -116,52 +116,53 @@ n_clusters = 5
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
 m_active_array = c(1, 2, 3)
-signalFraction = seq(.1, .9, by=.1)
+signalFraction = seq(.2, .8, by=.1)
 ngenes_array = c(round(seq(10, 100, length.out=5), 0), 200, 500)
 rho_array = seq(0, .98, length.out=8)
 
 resRecovery = lapply(1:n_reps, function(k){
 
-  # set.seed(k)
+  set.seed(k)
 
   resRecovery = lapply(m_active_array, function(m_active){
-    resRecovery = lapply(signalFraction, function(sigFrac){
 
-      # simulate variables
-      X = matrix(rnorm(m_total*n), n, m_total)
-      colnames(X) = paste0('X_', 1:m_total)
-      trueSet = sort(colnames(X)[1:m_active])
+    # simulate variables
+    X = matrix(rnorm(m_total*n), n, m_total)
+    colnames(X) = paste0('X_', 1:m_total)
+    trueSet = sort(colnames(X)[1:m_active])
 
-      resRecovery = lapply(ngenes_array, function(p){
-
-        clustID = sample.int(n_clusters, p, replace=TRUE)
+    resRecovery = lapply(ngenes_array, function(p){
 
         # simulate coefficient for each gene
         beta = matrix(rnorm(p*m_active, 10), m_active,p)
         beta[sample.int(length(beta), length(beta)*.5)] = 0 
 
+        eta = X[,1:m_active,drop=FALSE] %*% beta 
+
+        # changes correlation structure of noise. 
+        clustID = sample.int(n_clusters, p, replace=TRUE)
+
         resRecovery = lapply( rho_array, function(rho){
 
-            message("\rk = ", k, '  p = ', p, ' rho = ', rho, ' sigFrac =  ', sigFrac,  ' m_active = ', m_active, '        ')  
+          sigList = lapply(unique(clustID), function(id){
+            count = sum(clustID == id)                
+            Sigma = matrix(rho, count, count)
+            diag(Sigma) = 1
+            Sigma
+            })
+          Sigma = as.matrix(bdiag(sigList))
 
-            # changes correlation structure of noise. 
-            sigList = lapply(unique(clustID), function(id){
-              count = sum(clustID == id)                
-              Sigma = matrix(rho, count, count)
-              diag(Sigma) = 1
-              Sigma
-              })
-            Sigma = as.matrix(bdiag(sigList))
+          # Sigma = AR1(p, rho)
+          Noise = rmvnorm(n, sig=Sigma)
 
-            # Sigma = AR1(p, rho)
-            Noise = rmvnorm(n, sig=Sigma)
+          resRecovery = lapply(signalFraction, function(sigFrac){
 
-            eta = X[,1:m_active,drop=FALSE] %*% beta 
             fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
-            # fctr = 10
 
             Y = eta + Noise*fctr
             # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
+
+            message("\rk = ", k, '  p = ', p, ' rho = ', rho, ' sigFrac =  ', sigFrac,  ' m_active = ', m_active, '        ')  
 
             # try 3 logDet methods
             methods = c( "Touloumis_unequal", "pseudodet")  #"Strimmer" "Touloumis_equal"
@@ -213,9 +214,17 @@ df$down = with(df, recoveryRate - sd)
 
 cols = c("red", "orange", "dodgerblue", "green", "black")
 
-# pdf("~/www/mvBIC.pdf", width=12)
-ggplot(df, aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab(bquote(Correlation~(rho))) + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) + facet_wrap(~m_active+p, ncol=length(ngenes_array)  )
-# dev.off()
+figList = lapply(unique(df$sigFrac), function(v){
+ggplot(subset(df, sigFrac==v), aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab(bquote(Correlation~(rho))) + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) + facet_wrap(~m_active+p, ncol=length(ngenes_array)  ) + ggtitle(v)
+})
+
+library(gridExtra)
+pdf("~/www/mvBIC.pdf", width=12, height=120)
+do.call("grid.arrange", c(figList, ncol=1))
+dev.off()
+
+
+
 ```
 
 # Using dynamic lambda
@@ -224,14 +233,14 @@ ggplot(df, aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(
 <!---
 
 # naive
-mvBIC_fit( t(Y), ~ X_1 + X, X, useMVBIC=FALSE)
-mvBIC_fit( t(Y), ~ 1, X, useMVBIC=FALSE)
+mvBIC_fit( t(Y), ~ X_2, X, useMVBIC=FALSE)
+mvBIC_fit( t(Y), ~ X_1 +X_2, X, useMVBIC=FALSE)
 
 method = "Touloumis_unequal"
 # method="pseu"
-res1 = mvBIC_fit( t(scale(Y)), ~ X_1, X, logDetMethod=method, lambda=lambda)
+res1 = mvBIC_fit( t(scale(Y)), ~ X_2 , X, logDetMethod=method)
 res1@params
-res2 = mvBIC_fit( t(scale(Y)), ~ 1, X, logDetMethod=method, lambda=lambda)
+res2 = mvBIC_fit( t(scale(Y)), ~ 1, X, logDetMethod=method)
 res2@params
 res1-res2
 

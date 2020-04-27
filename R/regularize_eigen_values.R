@@ -41,6 +41,9 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 	# don't scale eigen values
 	ev = svd(X, nv=0, nu=0)$d^2
 
+	p = n_variables
+	gdf = p*(p+1)/2
+
     if( method == "Strimmer"){
     	# dcmp = cov.shrink(t(X), lambda.var=0)
 		lambda = estimate.lambda(t(X), verbose=FALSE)
@@ -90,12 +93,15 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 			lambda = res$lambdahat
 			sigma_hat = res$Sigmahat
 			ev_return = eigen(res$Sigmahat, symmetric=TRUE, only.values=TRUE)$values
+
+			gdf = p + (1-lambda)*p*(p-1)/2
 		}else{
 			sample_covariance_matrix <- cov(t(X))
        		sample_variances <- apply(X, 1, var)
 			sigma_hat <- (1 - lambda) * sample_covariance_matrix + diag(lambda * sample_variances, ncol(sample_covariance_matrix))
 			ev_return = eigen(sigma_hat, symmetric=TRUE, only.values=TRUE)$values
 
+			gdf = p + (1-lambda)*p*(p-1)/2 
 
 			# return new value of lambda
 			res = shrinkcovmat.unequal( X )
@@ -113,6 +119,7 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 	}
 
 	attr(ev_return, "lambda") = lambda
+	attr(ev_return, "gdf") = gdf
 	ev_return
 }
 
@@ -147,6 +154,7 @@ rlogDet = function( X, method=c("Touloumis_equal", "Touloumis_unequal", "Strimme
 	logDet = sum(log(ev))
 
 	attr(logDet, 'lambda') = attr(ev, "lambda")
+	attr(logDet, 'gdf') = attr(ev, "gdf")
 	logDet
 }
 
