@@ -168,7 +168,7 @@ resRecovery = lapply(1:n_reps, function(k){
 
             # try 3 logDet methods
             methods = c( "Touloumis_unequal", "Touloumis_equal")
-            criteria = c("AIC", "AICC", "BIC") 
+            criteria = c("AIC")#, "AICC", "BIC") 
             res = lapply( methods, function(method){
               res = lapply( criteria, function(criterion){
                 bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), criterion=criterion, verbose=FALSE, logDetMethod=method, deltaCutoff=5)

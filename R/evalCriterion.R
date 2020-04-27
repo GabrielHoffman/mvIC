@@ -27,7 +27,7 @@
 #' @import variancePartition
 #' @importFrom stats as.formula
 #' @export
-mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="AICC", deltaCutoff = 10, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=TRUE,...  ){
+mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="AIC", deltaCutoff = 10, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=TRUE,...  ){
 
 	nparamsMethod = match.arg(nparamsMethod)
 
@@ -177,7 +177,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="
 #' @import variancePartition 
 #'
 #' @export
-mvBIC_fit = function( exprObj, formula, data, criterion ="AICC", nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE, ... ){
+mvBIC_fit = function( exprObj, formula, data, criterion ="AIC", nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE, ... ){
 
 	nparamsMethod = match.arg(nparamsMethod)
 
@@ -363,7 +363,7 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 #' 
 #' @importFrom methods is
 #' @export
-mvBIC = function( fitList, criterion ="AICC", nparamsMethod = c("edf", "countLevels", "lme4"), ...){
+mvBIC = function( fitList, criterion ="AIC", nparamsMethod = c("edf", "countLevels", "lme4"), ...){
 
 	nparamsMethod = match.arg(nparamsMethod)
 
@@ -388,7 +388,7 @@ mvBIC = function( fitList, criterion ="AICC", nparamsMethod = c("edf", "countLev
 #' @param logDetMethod method to compute logDet of correlation matrix for finite sample size
 #' 
 #' @importFrom methods new
-mvBIC_from_residuals = function( residMatrix, m, criterion ="AICC", logDetMethod = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),...  ){
+mvBIC_from_residuals = function( residMatrix, m, criterion ="AIC", logDetMethod = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),...  ){
 
 	logDetMethod = match.arg( logDetMethod )
 
@@ -417,7 +417,7 @@ mvBIC_from_residuals = function( residMatrix, m, criterion ="AICC", logDetMethod
 		# doi:10.1214/15-EJS1022
 		penalty = switch( criterion, 
 						"AIC" 	= 2 * (p*m + df_cov),
-						"AICC" 	= 2 * n*(p*m + df_cov)/(n-m-p-1),
+						# "AICC" 	= 2 * n*(p*m + df_cov)/(n-m-p-1),
 						"BIC" 	= log(n) * (p*m + df_cov))
 
 		# retrun data term plus penalty
