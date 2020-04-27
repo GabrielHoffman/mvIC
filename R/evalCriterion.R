@@ -27,7 +27,7 @@
 #' @import variancePartition
 #' @importFrom stats as.formula
 #' @export
-mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff = 10, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=TRUE,...  ){
+mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="AICC", deltaCutoff = 10, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=TRUE,...  ){
 
 	nparamsMethod = match.arg(nparamsMethod)
 
@@ -38,7 +38,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 
 	# score base model
 	suppressWarnings({
-	baseScore = mvBIC_fit( exprObj, baseFormula, data, nparamsMethod=nparamsMethod, verbose=FALSE,...)
+	baseScore = mvBIC_fit( exprObj, baseFormula, data, criterion=criterion, nparamsMethod=nparamsMethod, verbose=FALSE,...)
 	# baseLambda = baseScore@params$lambda
 	})
 
@@ -66,7 +66,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 
 			suppressWarnings({
 			# evaluate multivariate BIC
-			mvBIC_fit( exprObj, form, data, nparamsMethod=nparamsMethod, verbose=FALSE, ...)#, lambda=baseLambda,...)
+			mvBIC_fit( exprObj, form, data, criterion=criterion, nparamsMethod=nparamsMethod, verbose=FALSE, ...)#, lambda=baseLambda,...)
 			})
 			})
 
@@ -177,7 +177,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 #' @import variancePartition 
 #'
 #' @export
-mvBIC_fit = function( exprObj, formula, data, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE, ... ){
+mvBIC_fit = function( exprObj, formula, data, criterion ="AICC", nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE, ... ){
 
 	nparamsMethod = match.arg(nparamsMethod)
 
@@ -213,7 +213,7 @@ mvBIC_fit = function( exprObj, formula, data, nparamsMethod = c("edf", "countLev
 		m <- nparam( fitList, nparamsMethod=nparamsMethod)
 	}
 	
-	mvBIC_from_residuals( residMatrix, m, ... )
+	mvBIC_from_residuals( residMatrix, m, criterion,... )
 }	
 
 
@@ -363,7 +363,7 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 #' 
 #' @importFrom methods is
 #' @export
-mvBIC = function( fitList, nparamsMethod = c("edf", "countLevels", "lme4"), ...){
+mvBIC = function( fitList, criterion ="AICC", nparamsMethod = c("edf", "countLevels", "lme4"), ...){
 
 	nparamsMethod = match.arg(nparamsMethod)
 
@@ -373,7 +373,7 @@ mvBIC = function( fitList, nparamsMethod = c("edf", "countLevels", "lme4"), ...)
 	# get number of parameters for multiple forms of fitList
 	m = nparam( fitList, nparamsMethod=nparamsMethod )
 
-	mvBIC_from_residuals( residMatrix, m, ...)
+	mvBIC_from_residuals( residMatrix, m, criterion,...)
 }
 
 
@@ -388,14 +388,14 @@ mvBIC = function( fitList, nparamsMethod = c("edf", "countLevels", "lme4"), ...)
 #' @param logDetMethod method to compute logDet of correlation matrix for finite sample size
 #' 
 #' @importFrom methods new
-mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE, logDetMethod = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),...  ){
+mvBIC_from_residuals = function( residMatrix, m, criterion ="AICC", logDetMethod = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),...  ){
 
 	logDetMethod = match.arg( logDetMethod )
 
 	n = ncol(residMatrix) # number of samples
 	p = nrow(residMatrix) # number of response variables
 
-	if( useMVBIC ){
+	if( criterion != "sum BIC" ){
 		# compute log determinant explicitly
 		# slower and not defined for low rank matrices
 		# dataTerm = n * determinant(crossprod(residMatrix), log=TRUE)$modulus[1]
@@ -412,12 +412,25 @@ mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE, logDetMethod =
 		# penalty = log(n) * (p*m + 0.5*p*(p+1)) #- log(2*pi)*(p*m + 0.5*p*(p+1)) 
 
 		df_cov = attr(logDet, "gdf")
-		# penalty = log(n) * (p*m + df_cov)
-		penalty = 2 * (p*m + df_cov)
+
+		# see Yanagihara, et al. 2015
+		# doi:10.1214/15-EJS1022
+		penalty = switch( criterion, 
+						"AIC" 	= 2 * (p*m + df_cov),
+						"AICC" 	= 2 * n*(p*m + df_cov)/(n-m-p-1),
+						"BIC" 	= log(n) * (p*m + df_cov))
 
 		# retrun data term plus penalty
 		res = dataTerm + penalty
-		attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m), dataTerm=dataTerm, penalty=penalty, lambda = attr(logDet, "lambda"), df_cov = df_cov)
+		attr(res, 'params') = data.frame(	n 			= n, 
+											p 			= p,
+											m 			= as.numeric(m), 
+											dataTerm 	= dataTerm, 
+										 	penalty 	= penalty, 
+										 	lambda 		= attr(logDet, "lambda"),
+										  	df_cov 		= df_cov, 
+										  	criterion 	= criterion, 
+										  	stringsAsFactors=FALSE)
 
 		if( ! is.null( attr(m, 'nparamsMethod') )){
 			attr(res, 'nparamsMethod') = attr(m, 'nparamsMethod')
@@ -432,7 +445,15 @@ mvBIC_from_residuals = function( residMatrix, m, useMVBIC = TRUE, logDetMethod =
 
 		# retrun data term plus penalty
 		res = dataTerm + penalty
-		attr(res, 'params') = data.frame(n=n, p=p, m=as.numeric(m), dataTerm=dataTerm, penalty=penalty, lambda = NA, df_cov = NA)
+		attr(res, 'params') = data.frame(	n 			= n, 
+											p 			= p, 
+											m 			= as.numeric(m),
+											dataTerm 	= dataTerm, 
+											penalty 	= penalty, 
+											lambda 		= NA, 
+											df_cov 		= NA,
+											criterion 	= "sum BIC", 
+											stringsAsFactors=FALSE)
 		attr(res, 'nparamsMethod') = "naive"
 	}
 
@@ -466,7 +487,8 @@ setMethod("print", "mvBIC", function( x ){
 	cat(paste("  Samples:\t", x@params$n, "\n"))	
 	cat(paste("  Responses:\t", x@params$p, "\n"))	
 	cat(paste("  Parameters:\t", x@params$m, "\n"))	
-	cat(paste("  lambda:\t", format(x@params$lambda, digits=3), "\n"))	
+	cat(paste("  lambda:\t", format(x@params$lambda, digits=3), "\n"))		
+	cat("  Criterion:\t", x@params$criterion, "\n")
 	cat("  Score:\t", as.numeric(x), "\n\n")
 })
 
