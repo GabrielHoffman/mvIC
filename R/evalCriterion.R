@@ -34,6 +34,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, deltaCutoff
 	if( ! is.data.frame(data) ){
 		data = as.data.frame(data, stringsAsFactors=FALSE)
 	}
+	data = droplevels(data)
 
 	# score base model
 	suppressWarnings({

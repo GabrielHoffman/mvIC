@@ -105,7 +105,7 @@ library(Matrix)
 
 set.seed(1)
 
-n_reps = 20   
+n_reps = 10   
 n = 300 # number of samples
 # p = 10 # number of genes
 # m_active = 2 # number of variables affecting phenotype
@@ -115,9 +115,9 @@ n_clusters = 5
  # summary(lm(Y~X[,1]))
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
-m_active_array = c(1, 2, 3)
-signalFraction = seq(.2, .8, by=.1)
-ngenes_array = c(round(seq(10, 100, length.out=5), 0), 200, 500)
+m_active_array = 1 #c(1, 2, 3)
+signalFraction = .3 #seq(.2, .8, by=.1)
+ngenes_array = c(10, 30, 50)#c(round(seq(10, 100, length.out=5), 0), 200, 500)
 rho_array = seq(0, .98, length.out=8)
 
 resRecovery = lapply(1:n_reps, function(k){
@@ -165,7 +165,7 @@ resRecovery = lapply(1:n_reps, function(k){
             message("\rk = ", k, '  p = ', p, ' rho = ', rho, ' sigFrac =  ', sigFrac,  ' m_active = ', m_active, '        ')  
 
             # try 3 logDet methods
-            methods = c( "Touloumis_unequal", "pseudodet")  #"Strimmer" "Touloumis_equal"
+            methods = c( "Touloumis_unequal", "Touloumis_equal", "pseudodet")  #"Strimmer" 
             res = sapply( methods, function(method){
               # message(method)
               # if( k==1 & p==10 & rho==0 & signalFraction==.99) browser()
@@ -197,7 +197,7 @@ resRecovery = lapply(1:n_reps, function(k){
         })
         do.call(rbind, resRecovery)
       })
-    do.call(rbind, resRecovery)
+      do.call(rbind, resRecovery)
     })
     do.call(rbind, resRecovery)
 })
@@ -233,12 +233,12 @@ dev.off()
 <!---
 
 # naive
-mvBIC_fit( t(Y), ~ X_2, X, useMVBIC=FALSE)
-mvBIC_fit( t(Y), ~ X_1 +X_2, X, useMVBIC=FALSE)
+mvBIC_fit( t(Y), ~ 1, X, useMVBIC=FALSE)
+mvBIC_fit( t(Y), ~ X_1, X, useMVBIC=FALSE)
 
 method = "Touloumis_unequal"
-# method="pseu"
-res1 = mvBIC_fit( t(scale(Y)), ~ X_2 , X, logDetMethod=method)
+# method="Touloumis_equal"
+res1 = mvBIC_fit( t(scale(Y)), ~ X_1 , X, logDetMethod=method)
 res1@params
 res2 = mvBIC_fit( t(scale(Y)), ~ 1, X, logDetMethod=method)
 res2@params
@@ -246,9 +246,24 @@ res1-res2
 
 
 
-
 residMatrix1 = t(residuals(lm(scale(Y) ~ X_1, data=as.data.frame(X))))
 residMatrix2 = t(residuals(lm(scale(Y) ~ 1, data=as.data.frame(X))))
+
+# sum(log(adjusted_eigen_values(residMatrix1, method="Touloumis_unequal")))
+# sum(log(adjusted_eigen_values(residMatrix2, method="Touloumis_unequal")))
+
+# sum(log(adjusted_eigen_values(residMatrix1, method="Touloumis_equal")))
+# sum(log(adjusted_eigen_values(residMatrix2, method="Touloumis_equal")))
+
+res1 = rlogDet( residMatrix1, method="Touloumis_unequal" )
+res2 = rlogDet( residMatrix2, method="Touloumis_unequal" )
+res1 - res2
+
+resA = rlogDet( residMatrix1, method="Touloumis_equal" )
+resB = rlogDet( residMatrix2, method="Touloumis_equal" )
+resA - resB
+
+
 
 
 mvBIC:::mvBIC_from_residuals( residMatrix1, 3, lambda=0.317 )
@@ -279,6 +294,9 @@ v = sapply( 1:100, function(k){
   a-b
 })
 plot(v)
+
+
+
 
 
 d1[1:3]

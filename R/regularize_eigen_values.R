@@ -41,6 +41,7 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 	# don't scale eigen values
 	ev = svd(X, nv=0, nu=0)$d^2
 
+	# gdf without shrinkage
 	p = n_variables
 	gdf = p*(p+1)/2
 
@@ -60,28 +61,36 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 		# with __equal_ variances, 
 		 # sigmahat <- (1 - lambda_hat) * sample_covariance_matrix + diag(nu_hat * lambda_hat, p)
 		res = shrinkcovmat.equal_lambda( X )
-		# message(paste("lambda:", res$lambda_hat))
+		lambda = res$lambda_hat
+		nu_hat = res$nu_hat
 
-		if( missing(lambda) ){
-			lambda = res$lambda_hat
+		A = X / sqrt(n_samples-1)
+		ev = svd(A , nv=0, nu=0)$d^2
 
-			# message(paste("New lambda", lambda))
-		}else{
-			# message(paste("Use recycled lambda", lambda))
-		} # else used passed value
+		if( length(ev) < n_variables){
+			# concatenate with zero eigen-values
+			ev = c(ev, rep(0, n_variables - length(ev)))
+		}
 
-		# message(paste("     nu = ", res$nu_hat))
+		# modify eigenvalues
+		ev_return = (1-lambda) * ev + lambda * nu_hat
 
-		ev_return = (1-lambda) * ev + lambda * res$nu_hat
+		# sample_covariance_matrix <- cov(t(X))
+		# Sig = sigmahat <- (1 - lambda) * sample_covariance_matrix +
+  #           diag(nu_hat * lambda, p)
+  #   	eigen(Sig, symmetric=TRUE, only.values=TRUE)$values
 
-		# return new value of lambda
-		# lambda = res$lambda_hat
+  #   	eigen(sample_covariance_matrix)$values[1:3]
+  #   	svd(X / sqrt(n_samples-1))$d[1:3]^2
 
 		# exact for equal variances
 		# res = shrinkcovmat.equal( X )
 		# lambda = res$lambdahat
-		# sigma_hat = res$Sigmahat
 		# eigen(res$Sigmahat, symmetric=TRUE, only.values=TRUE)$values
+
+		gdf = p + (1-lambda)*p*(p-1)/2
+
+
 	}else if(method == "Touloumis_unequal"){
 
 		if( missing(lambda) ){

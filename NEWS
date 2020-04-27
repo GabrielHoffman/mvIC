@@ -1,4 +1,8 @@
-# v1.1.1  April 26th, 2020
+# v1.1.4  April 26th, 2020
+	o Add fast shrinkage of eigen values for Touloumis_equal
+
+
+# v1.1.3  April 26th, 2020
 	o add generalized degrees of freedom for covariance estimate
 
 # v1.1.1  April 16th, 2020
