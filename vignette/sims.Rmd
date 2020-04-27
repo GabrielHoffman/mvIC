@@ -220,7 +220,7 @@ resRecovery = do.call(rbind, resRecovery)
 resRecovery = data.table(resRecovery)
 ```
 
-```{r plot.sims, cache=FALSE, fig.width=15}
+```{r plot.sims, cache=FALSE, fig.width=20, fig.height=30}
 # summarize 
 df = resRecovery[,data.frame(recoveryRate = sum(recovery)/length(recovery)),by=c('rho', 'p', 'sigFrac', 'm_active','method', 'criterion')]
 df$sd = with(df, sqrt(recoveryRate*(1-recoveryRate)/n_reps))
