@@ -1,11 +1,11 @@
-Package: mvBIC
+Package: mvIC
 Type: Package
-Title: Extends the standard the standard Bayesian Information Criterion (BIC) to the case of multivariate regression
-Version: 1.1.5
-Date: 2020-04-16
+Title: Multivariate Information Criteria to identify important predictors in high dimensional multivariate regression
+Version: 1.2.0
+Date: 2020-04-28
 Author: Gabriel E. Hoffman
 Maintainer: Gabriel E. Hoffman <gabriel.hoffman@mssm.edu>
-Description: mvBIC extends the standard the standard Bayesian Information Criterion (BIC) to the case of multivariate regression. The model fit across many response variables is evaluated and the criterion explicitly considers correlation between reponses. mvBIC is appiciable to linear and linear mixed models.  Forward stepwise regression with the mvBIC criterion enables automated variable selection for high dimensional datasets.
+Description: Identifying important predictor variables in datasets with thousands of features (i.e. genes) but many fewer samples is a common challange in genomics. mvIC extends AIC and BIC to the context of multivariate regression.  Regression models are fit across each response variable and the information criterion explicitly considers correlation between reponses. mvIC is appiciable to linear and linear mixed models.  Forward stepwise regression with the mvIC criterion enables automated variable selection for high dimensional genomics datasets.
 License: GPL (>= 2)
 Suggests:
     BiocStyle

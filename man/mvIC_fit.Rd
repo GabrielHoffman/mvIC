@@ -44,8 +44,7 @@ When \eqn{p > m} the residual covariance matrix Sigma is not full rank.  In this
 See References
 
 Pauler, DK. The Schwarz criterion and related methods for normal linear models. Biometrika (1998), 85, 1, pp. 13-27
-
-Edward J. Bedrick and Chih-Ling Tsai. Model Selection for Multivariate Regression in Small Samples.  Biometrics,  50:1 1994 226-231
+#' Edward J. Bedrick and Chih-Ling Tsai. Model Selection for Multivariate Regression in Small Samples.  Biometrics,  50:1 1994 226-231
 
 TJ Wu, P Chen, Y Yan. The weighted average information criterion for multivariate regression model selection. Signal Processing 93.1 (2013): 49-55.
 }

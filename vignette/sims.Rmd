@@ -30,7 +30,7 @@ R
 
 # Sys.setenv(GITHUB_PAT = "f74018151cf7c902b57aa023b2737190e9bc0400")
 
-devtools::reload("/Users/gabrielhoffman/workspace/repos/mvBIC")
+devtools::reload("/Users/gabrielhoffman/workspace/repos/mvIC")
 
 
 
@@ -48,7 +48,7 @@ rmarkdown::render("sims.Rmd", output_dir='./', intermediates_dir='./')
 ```{r load.packages, echo=FALSE, message=FALSE, results='hide'}
 suppressPackageStartupMessages(library(knitr))
 suppressPackageStartupMessages(library(data.table))
-suppressPackageStartupMessages(library(mvBIC))
+suppressPackageStartupMessages(library(mvIC))
 suppressPackageStartupMessages(library(variancePartition))
 
 options(xtable.type="html")
@@ -75,7 +75,7 @@ Simulation, show probability of selection true model increases with number of fe
 # compare to sum of BIC
 
 
-devtools::reload("/Users/gabrielhoffman/workspace/repos/mvBIC")
+devtools::reload("/Users/gabrielhoffman/workspace/repos/mvIC")
 
 ```{r basic}
 n = 100
@@ -96,7 +96,7 @@ bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), criterion="sum BIC
 
 ```{r sim.scale}
 library(poolr)
-library(mvBIC)
+library(mvIC)
 library(ggplot2)
 library(mvtnorm)
 library(data.table)
