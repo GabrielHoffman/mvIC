@@ -9,9 +9,10 @@ mvForwardStepwise(
   baseFormula,
   data,
   variables,
-  criterion = "AIC",
-  deltaCutoff = 10,
+  criterion = c("AIC", "BIC", "sum AIC", "sum BIC"),
+  shrink.method = c("var_equal", "var_unequal", "none"),
   nparamsMethod = c("edf", "countLevels", "lme4"),
+  deltaCutoff = 5,
   verbose = TRUE,
   ...
 )
@@ -25,13 +26,17 @@ mvForwardStepwise(
 
 \item{variables}{array of variable names to be considered in the regression.  If variable should be considered as random effect, use '(1|A)'.}
 
-\item{deltaCutoff}{stop interating of the model improvement is less than deltaCutoff}
+\item{criterion}{multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')}
+
+\item{shrink.method}{Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses}
 
 \item{nparamsMethod}{"edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}}
 
+\item{deltaCutoff}{stop interating of the model improvement is less than deltaCutoff. default is 5}
+
 \item{verbose}{Default TRUE. Print messages}
 
-\item{...}{additional arguements}
+\item{...}{additional arguements passed to logDet}
 }
 \value{
 list with formula of final model, and trace of iterations during model selection
@@ -43,8 +48,8 @@ Multivariate forward stepwise regression evluated by multivariate BIC
 
 Y = with(iris, rbind(Sepal.Width, Sepal.Length))
 
-# fit forward stepwise regression starting with model: ~1. Stop when model improvement is < 10
-bestModel = mvForwardStepwise( Y, ~ 1, data=iris, variables=colnames(iris)[3:5], deltaCutoff=10)
+# fit forward stepwise regression starting with model: ~1. 
+bestModel = mvForwardStepwise( Y, ~ 1, data=iris, variables=colnames(iris)[3:5])
 
 bestModel
 

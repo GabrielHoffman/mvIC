@@ -6,14 +6,16 @@
 \usage{
 adjusted_eigen_values(
   X,
-  method = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),
+  shrink.method = c("var_equal", "var_unequal", "none"),
   lambda
 )
 }
 \arguments{
 \item{X}{data matrix}
 
-\item{method}{strink using either "Touloumis" or "Strimmer" method}
+\item{shrink.method}{Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses}
+
+\item{lambda}{specify lambda instead of estimating (development, do not use)}
 }
 \description{
 Regularized eigen-values for low rank matrix

@@ -1,0 +1,35 @@
+TODO
+
+Add warning about small eigen-values or too many responses for shrink.method = "none"
+
+Add faster method to approximate Touloumis_unequal
+	Can I adjust scaling to better get constant variance?
+	Currently Y is scaled, but residuals are not
+	Set to that difference in log dets in the same
+	
+
+Add better error messages
+	https://github.com/GabrielHoffman/mvBIC/issues/1
+
+
+DONE	
+	Added generalized degrees of freedom basedon Ye 1998
+	
+
+
+If response variable is very low rank, then the model can keep fitting coefficients until it crashes
+
+
+BIC and mvBIC for independent response variables are equivalent as n -> Inf
+
+as N -> Inf, the correlation between independent response variables approaches 0, 
+	so log det of emprical correlation matrix is same for diagnal of RSS values
+	This only holds for finite p.  If p is also large, then correlation matrix is low rank
+
+	Does this method work for large p?
+
+
+The iterative method of Holbrook and maotai is equivalent to adding a constant to each eigen value
+
+
+What does it say: iteration: 10

@@ -9,26 +9,31 @@
 #' @param baseFormula specifies baseline variables for the linear (mixed) model.  Must only specify covariates, since the rows of exprObj are automatically used as a response. e.g.: \code{~ a + b + (1|c)} Formulas with only fixed effects also work, and \code{lmFit()} followed by \code{contrasts.fit()} are run.
 #' @param data data.frame with columns corresponding to formula
 #' @param variables array of variable names to be considered in the regression.  If variable should be considered as random effect, use '(1|A)'.
-#' @param deltaCutoff stop interating of the model improvement is less than deltaCutoff 
+#' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')
+#' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
+#' @param deltaCutoff stop interating of the model improvement is less than deltaCutoff. default is 5 
 #' @param verbose Default TRUE. Print messages
-#' @param ... additional arguements
+#' @param ... additional arguements passed to logDet
 #' 
 #' @return list with formula of final model, and trace of iterations during model selection
 #' @examples
 #' 
 #' Y = with(iris, rbind(Sepal.Width, Sepal.Length))
 #' 
-#' # fit forward stepwise regression starting with model: ~1. Stop when model improvement is < 10
-#' bestModel = mvForwardStepwise( Y, ~ 1, data=iris, variables=colnames(iris)[3:5], deltaCutoff=10)
+#' # fit forward stepwise regression starting with model: ~1. 
+#' bestModel = mvForwardStepwise( Y, ~ 1, data=iris, variables=colnames(iris)[3:5])
 #' 
 #' bestModel
 #' 
 #' @import variancePartition
 #' @importFrom stats as.formula
+#' @importFrom dplyr as_tibble
 #' @export
-mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="AIC", deltaCutoff = 10, nparamsMethod = c("edf", "countLevels", "lme4"), verbose=TRUE,...  ){
+mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion = c("AIC", "BIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "none"), nparamsMethod = c("edf", "countLevels", "lme4"), deltaCutoff = 5, verbose=TRUE,...  ){
 
+	criterion = match.arg(criterion)
+	shrink.method  = match.arg(shrink.method)
 	nparamsMethod = match.arg(nparamsMethod)
 
 	if( ! is.data.frame(data) ){
@@ -38,17 +43,17 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="
 
 	# score base model
 	suppressWarnings({
-	baseScore = mvBIC_fit( exprObj, baseFormula, data, criterion=criterion, nparamsMethod=nparamsMethod, verbose=FALSE,...)
-	# baseLambda = baseScore@params$lambda
+	baseScore = mvIC_fit( exprObj, baseFormula, data, criterion=criterion, shrink.method=shrink.method , nparamsMethod=nparamsMethod, verbose=FALSE,...)
 	})
 
-	resultsList = list(	iter 		= c(),
-						variable 	= c(),
-						delta 		= c(), 
-						score 		= c(),
-						nparams 	= c(), 
-						isBestVar	= c(), 
-						isAdded		= c())
+	resTrace = data.frame(	iter 		= 0,
+							variable 	= as.character(baseFormula)[-1],
+							delta 		= NA, 
+							score 		= as.numeric(baseScore),								 
+							isBest		= "yes", 
+							isAdded		= "yes", 
+							stringsAsFactors=FALSE)
+	resTrace = cbind(resTrace, baseScore@params)
 
 	iteration = 1
 
@@ -65,8 +70,8 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="
 			form = as.formula(paste(paste0(baseFormula, collapse=' '), "+", feature))
 
 			suppressWarnings({
-			# evaluate multivariate BIC
-			mvBIC_fit( exprObj, form, data, criterion=criterion, nparamsMethod=nparamsMethod, verbose=FALSE, ...)#, lambda=baseLambda,...)
+			# evaluate multivariate score
+			mvIC_fit( exprObj, form, data, criterion=criterion, shrink.method=shrink.method, nparamsMethod=nparamsMethod, verbose=FALSE, ...)
 			})
 			})
 
@@ -77,16 +82,30 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="
 		delta = as.numeric(score[[i]] - baseScore)
 		if( verbose ) message("\nBest model delta: ", format(delta, digits=2))	
 
-		# save results
-		resultsList$iter = c(resultsList$iter, rep(iteration, length(score)))
-		resultsList$variable = c(resultsList$variable, variables)
-		resultsList$delta = c(resultsList$delta, as.numeric(unlist(score) - baseScore) )
-		resultsList$score = c(resultsList$score, unlist(score))
-		resultsList$nparams = c(resultsList$nparams, unlist(lapply(score, function(x) round(attr(x, 'param')$m, 2))) )
+
 		isBest = rep("", length(score))
+		isAdded = rep("", length(score))	
 		isBest[i] = "yes"
-		resultsList$isBestVar = c(resultsList$isBestVar, isBest)
-		isAdded = rep("", length(score))		
+		if( delta < -deltaCutoff ){				
+			isAdded[i] = "yes"
+		}
+		resNew = data.frame(iter 		= iteration,
+							variable 	= variables,
+							delta 		= as.numeric(unlist(score) - baseScore), 
+							score 		= unlist(score),								 
+							isBest		= isBest, 
+							isAdded		= isAdded, 
+							stringsAsFactors=FALSE)
+
+		# get summary stats from model fits
+		params = lapply(score, function(x) x@params)
+		params = do.call(rbind, params)
+
+		# combine results from this iteration
+		resNew = cbind(resNew, params)
+
+		# combine with results from previous interations
+		resTrace = rbind(resTrace, resNew)
 
 		iteration = iteration + 1
 
@@ -98,16 +117,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="
 			baseFormula = as.formula(paste(paste0(baseFormula, collapse=' '), "+", variables[i]))
 			baseScore = score[[i]]
 
-			if( exists("method") ){
-				if( method %in% c("Touloumis_equal", "Touloumis_unequal") ){
-					# re-evaluate base lambda and score
-					# baseScore = mvBIC_fit( exprObj, baseFormula, data, nparamsMethod=nparamsMethod, verbose=FALSE,...)
-					# baseLambda = baseScore@params$lambda
-				}
-			}
-			variables = variables[-i]			
-			isAdded[i] = "yes"
-			resultsList$isAdded = c(resultsList$isAdded, isAdded)
+			variables = variables[-i]		
 
 			# if there are no additional variables to try
 			if( length(variables) == 0){
@@ -115,18 +125,20 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="
 			}			
 
 		}else{
-			resultsList$isAdded = c(resultsList$isAdded, isAdded)
-
 			if( verbose ){
-				message(paste0("Final model: ", paste0(baseFormula, collapse=' ')))
-				message("No additional variables selected")
+				message(paste0("\nFinal model:\n  ", paste0(baseFormula, collapse=' ')))
 			}
 			break
 		}
 	}
 
-	return( list(formula = baseFormula, 
-				 trace = as.data.frame(resultsList) ) )
+	# remove some columns from resTrace that are constant
+	idx = colnames(resTrace) %in% c("n", 'p', 'criterion', 'shrink.method')
+
+	# return as mvIC_result object
+	new("mvIC_result", 	list(formula = baseFormula, 
+						settings= resTrace[1,idx],
+						trace 	= as_tibble(resTrace[,!idx]) ))
 }
 
 
@@ -143,9 +155,11 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="
 #' @param exprObj matrix of expression data (g genes x n samples), or ExpressionSet, or EList returned by voom() from the limma package
 #' @param formula specifies variables for the linear (mixed) model.  Must only specify covariates, since the rows of exprObj are automatically used as a response. e.g.: \code{~ a + b + (1|c)} Formulas with only fixed effects also work, and \code{lmFit()} followed by \code{contrasts.fit()} are run.
 #' @param data data.frame with columns corresponding to formula
+#' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')
+#' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
 #' @param verbose Default TRUE. Print messages
-#' @param ... additional arguements
+#' @param ... additional arguements passed to logDet
 #'
 #' @description
 #' Evaluate multivariate BIC while considering correlation between response variables. For n samples, p responses and m parameters for each model, evaluate the multivariate BIC as \deqn{n * logDet(\Sigma) + log(n) * (p*m + 0.5*p*(p+1))}
@@ -156,8 +170,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="
 #' See References
 #'
 #' Pauler, DK. The Schwarz criterion and related methods for normal linear models. Biometrika (1998), 85, 1, pp. 13-27
-#' 
-#' Edward J. Bedrick and Chih-Ling Tsai. Model Selection for Multivariate Regression in Small Samples.  Biometrics,  50:1 1994 226-231
+#' #' Edward J. Bedrick and Chih-Ling Tsai. Model Selection for Multivariate Regression in Small Samples.  Biometrics,  50:1 1994 226-231
 #'
 #' TJ Wu, P Chen, Y Yan. The weighted average information criterion for multivariate regression model selection. Signal Processing 93.1 (2013): 49-55.
 #'
@@ -168,17 +181,19 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion="
 #' Y = with(iris, rbind(Sepal.Width, Sepal.Length))
 #' 
 #' # Evaluate model 1
-#' mvBIC_fit( Y, ~ Species, data=iris)
+#' mvIC_fit( Y, ~ Species, data=iris)
 #' 
 #' # Evaluate model 2
-#' # smaller mvBIC means better model
-#' mvBIC_fit( Y, ~ Petal.Width + Petal.Length + Species, data=iris)
+#' # smaller mvIC means better model
+#' mvIC_fit( Y, ~ Petal.Width + Petal.Length + Species, data=iris)
 #' 
 #' @import variancePartition 
 #'
 #' @export
-mvBIC_fit = function( exprObj, formula, data, criterion ="AIC", nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE, ... ){
+mvIC_fit = function( exprObj, formula, data, criterion = c("AIC", "BIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "none"), nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE, ... ){
 
+	criterion = match.arg(criterion)
+	shrink.method  = match.arg(shrink.method)
 	nparamsMethod = match.arg(nparamsMethod)
 
 	if( ! is.data.frame(data) ){
@@ -213,7 +228,7 @@ mvBIC_fit = function( exprObj, formula, data, criterion ="AIC", nparamsMethod = 
 		m <- nparam( fitList, nparamsMethod=nparamsMethod)
 	}
 	
-	mvBIC_from_residuals( residMatrix, m, criterion,... )
+	mvIC_from_residuals( residMatrix, m, criterion=criterion, shrink.method=shrink.method,... )
 }	
 
 
@@ -332,8 +347,10 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 #' Evaluate multivariate BIC from a list of regression fits
 #'
 #' @param fitList list of model fits with \code{lm()} or \code{lmer()}.  All models must have same data, response and formula.
+#' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')
+#' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
-#' @param ... additional arguements
+#' @param ... additional arguements passed to logDet
 #'
 #' @description
 #' Evaluate multivariate BIC while considering correlation between response variables. For n samples, p responses and m parameters for each model, evaluate the multivariate BIC as \deqn{n * logDet(\Sigma) + log(n) * (p*m + 0.5*p*(p+1))}
@@ -354,17 +371,19 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 #' # Predict Sepal width and Length given Species 
 #' # Evaluate model fit
 #' fit1 = lm( cbind(Sepal.Width, Sepal.Length) ~ Species, data=iris)
-#' mvBIC( fit1 )
+#' mvIC( fit1 )
 #' 
 #' # add Petal width and length
-#' # smaller mvBIC means better model
+#' # smaller mvIC means better model
 #' fit2 = lm( cbind(Sepal.Width, Sepal.Length) ~ Petal.Width + Petal.Length + Species, data=iris)
-#' mvBIC( fit2 )
+#' mvIC( fit2 )
 #' 
 #' @importFrom methods is
 #' @export
-mvBIC = function( fitList, criterion ="AIC", nparamsMethod = c("edf", "countLevels", "lme4"), ...){
+mvIC = function( fitList, criterion =c("AIC", "BIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "none"), nparamsMethod = c("edf", "countLevels", "lme4"), ...){
 
+	criterion = match.arg(criterion)
+	shrink.method  = match.arg(shrink.method)
 	nparamsMethod = match.arg(nparamsMethod)
 
 	# get residuals for 'mlm', 'lm', or list of 'lm' or 'lmer'
@@ -373,7 +392,7 @@ mvBIC = function( fitList, criterion ="AIC", nparamsMethod = c("edf", "countLeve
 	# get number of parameters for multiple forms of fitList
 	m = nparam( fitList, nparamsMethod=nparamsMethod )
 
-	mvBIC_from_residuals( residMatrix, m, criterion,...)
+	mvIC_from_residuals( residMatrix, m, criterion,...)
 }
 
 
@@ -384,41 +403,36 @@ mvBIC = function( fitList, criterion ="AIC", nparamsMethod = c("edf", "countLeve
 #' 
 #' @param residMatrix matrix of residuals where rows are features
 #' @param m number of parameters for each model
-#' @param useMVBIC (development only, do not change)
-#' @param logDetMethod method to compute logDet of correlation matrix for finite sample size
+#' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')
+#' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
+#' @param ... other arguments passed to logDet
 #' 
 #' @importFrom methods new
-mvBIC_from_residuals = function( residMatrix, m, criterion ="AIC", logDetMethod = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),...  ){
+mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "none"), ... ){
 
-	logDetMethod = match.arg( logDetMethod )
+	criterion = match.arg(criterion)
+	shrink.method  = match.arg(shrink.method)
 
 	n = ncol(residMatrix) # number of samples
 	p = nrow(residMatrix) # number of response variables
 
-	if( ! criterion %in% c("sum AIC","sum BIC") ){
+	if( criterion %in% c("AIC", "BIC") ){
 		# compute log determinant explicitly
 		# slower and not defined for low rank matrices
 		# dataTerm = n * determinant(crossprod(residMatrix), log=TRUE)$modulus[1]
 
-		# Evaluate logDet based on logDetMethod
-		logDet = rlogDet( residMatrix, logDetMethod,... )
+		# Evaluate logDet based on shrink.method
+		logDet = rlogDet( residMatrix, shrink.method,... )
 		dataTerm = n * logDet
 		
-		# Penalty term for BIC
-		# For one response the standard penalty is log(n)*m
-		# 	this just adds a log(n) to that value
-		#	but only the differences between two models is important
-		# Estimating the p x p covariance matrix requires 0.5*p*(p+1) parameters
-		# penalty = log(n) * (p*m + 0.5*p*(p+1)) #- log(2*pi)*(p*m + 0.5*p*(p+1)) 
-
-		df_cov = attr(logDet, "gdf")
+		# get effective number of parameter used to estimate covariance by shrinkage
+		gdf_cov = attr(logDet, "param")$gdf
 
 		# see Yanagihara, et al. 2015
 		# doi:10.1214/15-EJS1022
 		penalty = switch( criterion, 
-						"AIC" 	= 2 * (p*m + df_cov),
-						# "AICC" 	= 2 * n*(p*m + df_cov)/(n-m-p-1),
-						"BIC" 	= log(n) * (p*m + df_cov))
+						"AIC" 	= 2 * (p*m + gdf_cov),
+						"BIC" 	= log(n) * (p*m + gdf_cov))
 
 		# retrun data term plus penalty
 		res = dataTerm + penalty
@@ -427,9 +441,10 @@ mvBIC_from_residuals = function( residMatrix, m, criterion ="AIC", logDetMethod 
 											m 			= as.numeric(m), 
 											dataTerm 	= dataTerm, 
 										 	penalty 	= penalty, 
-										 	lambda 		= attr(logDet, "lambda"),
-										  	df_cov 		= df_cov, 
+										 	lambda 		= attr(logDet, "param")$lambda,
+										  	df_cov 		= gdf_cov, 
 										  	criterion 	= criterion, 
+										  	shrink.method = shrink.method,
 										  	stringsAsFactors=FALSE)
 
 		if( ! is.null( attr(m, 'nparamsMethod') )){
@@ -457,57 +472,105 @@ mvBIC_from_residuals = function( residMatrix, m, criterion ="AIC", logDetMethod 
 											lambda 		= NA, 
 											df_cov 		= NA,
 											criterion 	= criterion, 
+											shrink.method = "none",
 											stringsAsFactors=FALSE)
 		attr(res, 'nparamsMethod') = "naive"
 	}
 
-	new("mvBIC", as.numeric(res), 
+	new("mvIC", as.numeric(res), 
 				 nparamsMethod = attr(res, 'nparamsMethod'),
 				 params = attr(res, 'params'))
 }
 
 
-#' Class mvBIC
+#' Class mvIC
 #'
-#' Class stores mvBIC score, method and parameter values
+#' Class stores mvIC score, method and parameter values
 #'
-#' @name mvBIC-class
-#' @rdname mvBIC-class
-#' @exportClass mvBIC
-setClass("mvBIC", representation(nparamsMethod = "character", params="data.frame"), contains="numeric")
+#' @name mvIC-class
+#' @rdname mvIC-class
+#' @exportClass mvIC
+setClass("mvIC", representation(nparamsMethod = "character", params="data.frame"), contains="numeric")
 
 
 
-# Print mvBIC object
+# Print mvIC object
 #
-# Print mvBIC object
+# Print mvIC object
 # 
-# @param x mvBIC object
+# @param x mvIC object
 # @export
-setMethod("print", "mvBIC", function( x ){
+setMethod("print", "mvIC", function( x ){
 
-	cat("\t\tMultivariate BIC score\n\n")
-	cat(paste("  Method:\t", x@nparamsMethod), "\n")
+	cat("\t\tMultivariate IC score\n\n")
 	cat(paste("  Samples:\t", x@params$n, "\n"))	
 	cat(paste("  Responses:\t", x@params$p, "\n"))	
-	cat(paste("  Parameters:\t", x@params$m, "\n"))	
-	cat(paste("  lambda:\t", format(x@params$lambda, digits=3), "\n"))		
+	cat(paste("  Coef param:\t", round(x@params$m, digits=1), "\n"))
+	cat(paste("  Cov param:\t", round(x@params$df_cov, digits=1), "\n"))	
+	cat(paste("  Regression:\t", x@nparamsMethod), "\n")		
+	cat("  Shrink method:", x@params$shrink.method, "\n")	
+	cat(paste("  lambda:\t", format(x@params$lambda, digits=3), "\n"))	
 	cat("  Criterion:\t", x@params$criterion, "\n")
 	cat("  Score:\t", as.numeric(x), "\n\n")
 })
 
 
 
-# Show mvBIC object
+# Show mvIC object
 #
-# Show mvBIC object
+# Show mvIC object
 # 
-# @param object mvBIC object
+# @param object mvIC object
 # @export
-setMethod("show", "mvBIC", function( object ){
+setMethod("show", "mvIC", function( object ){
 	print( object )
 })
 
+
+
+
+
+
+#' Class mvIC_result
+#'
+#' Class stores result of \link{\code{mvForwardStepwise}}
+#'
+#' @name mvIC_result-class
+#' @rdname mvIC_result-class
+#' @exportClass mvIC_result
+# setClass("mvIC_result", representation(formula = "formula", settings="data.frame", trace="data.frame"))
+setClass("mvIC_result", contains="list")
+
+
+
+# Print mvIC_result object
+#
+# Print mvIC_result object
+# 
+# @param x mvIC_result object
+# @export
+setMethod("print", "mvIC_result", function( x ){
+
+	cat("\t\tMultivariate IC forward stepwise regression\n\n")
+	cat("  Samples:\t", x$settings$n, '\n')
+	cat("  Responses:\t", x$settings$p, '\n')
+	cat("  Shrink method:", x$settings$shrink.method, '\n')
+	cat("  Criterion:\t", x$settings$criterion, '\n')
+	cat("  Iterations:\t", max(x$trace$iter), "\n\n")	
+	cat('  Best model:', paste(as.character(x$formula), collapse=" "), '\n\n')
+})
+
+
+
+# Show mvIC_result object
+#
+# Show mvIC_result object
+# 
+# @param object mvIC_result object
+# @export
+setMethod("show", "mvIC_result", function( object ){
+	print( object )
+})
 
 
 

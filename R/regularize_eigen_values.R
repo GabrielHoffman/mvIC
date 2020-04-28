@@ -18,41 +18,23 @@ scale_features = function(obj){
 #' Regularized eigen-values for low rank matrix
 #'
 #' @param X data matrix
-#' @param method strink using either "Touloumis" or "Strimmer" method
+#' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
+#' @param lambda specify lambda instead of estimating (development, do not use)
 #'
-#' @importFrom corpcor estimate.lambda
 #' @import ShrinkCovMat
+#' @importFrom stats var cov
 #' @export
-adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"), lambda ){
+adjusted_eigen_values = function( X, shrink.method=c("var_equal", "var_unequal", "none"), lambda ){
 
-	method = match.arg(method)
+	shrink.method = match.arg(shrink.method)
 
     n_samples = ncol(X)
     n_variables = nrow(X)
 
-    # scale so that crossproduct is correlation matrix
-    # denom = sqrt(n_variables-1)
-    # X_std = scale(X) 
-
-    # get eigen-values
-    # ev = svd(X_std / denom, nv=0, nu=0)$d^2    
-	# ev = svd(X / sqrt(n_samples-1), nv=0, nu=0)$d^2
-
-	# don't scale eigen values
-	ev = svd(X, nv=0, nu=0)$d^2
-
 	# gdf without shrinkage
 	p = n_variables
-	gdf = p*(p+1)/2
 
-    if( method == "Strimmer"){
-    	# dcmp = cov.shrink(t(X), lambda.var=0)
-		lambda = estimate.lambda(t(X), verbose=FALSE)
-
-		ev_return = (1-lambda)*ev + lambda * mean(apply(X, 2, var))
-		# Sig = cor.shrink(X_std)		
-		# ev_shrink = eigen(Sig)$values
-	}else if(method == "Touloumis_equal"){
+   	if(shrink.method == "var_equal"){
 
 		# This method is approximate, but _much_ faster
 		# Linear instead of cubic time
@@ -88,10 +70,10 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 		# lambda = res$lambdahat
 		# eigen(res$Sigmahat, symmetric=TRUE, only.values=TRUE)$values
 
-		gdf = p + (1-lambda)*p*(p-1)/2
+		# gdf = p + (1-lambda)*p*(p-1)/2
+		gdf = p*(1-lambda) + lambda + (1-lambda)*p*(p-1)/2
 
-
-	}else if(method == "Touloumis_unequal"){
+	}else if(shrink.method == "var_unequal"){
 
 		if( missing(lambda) ){
 			# with __unequal__ variances,
@@ -122,52 +104,49 @@ adjusted_eigen_values = function( X, method=c("Touloumis_equal", "Touloumis_uneq
 		# When p > n, only considers the non-zero singular values	
 		# this is the "pseudo-determinant" as corallary to the "pseudo-inverse"
 
-		k = min(nrow(X), ncol(X))*.9
-		ev_return = ev[1:k]
+		A = X / sqrt(n_samples-1)
+		ev = svd(A , nv=0, nu=0)$d^2
+
+		if( min(ev) < 1e-10 ){
+			warning(paste("Smallest eigen-value is", format(min(ev), scientific=TRUE, digits=2), "so log determinant is very unstable.\nConsider using shrink.method 'var_equal' or 'var_unequal'"))
+		}
+
+		ev_return = ev
 		lambda = 0
+		gdf = p*(p+1)/2
 	}
 
-	attr(ev_return, "lambda") = lambda
-	attr(ev_return, "gdf") = gdf
+	# return lambda and generalized degrees of freedom for covariance estimation
+	attr(ev_return, "params") = data.frame(lambda=lambda, gdf=gdf)
+
 	ev_return
 }
-
-    # lambda = switch( method, 
-    # 	# get shrinkage parameter
-    # 	# res = cor.shrink( X_std )
-    # 	"Strimmer" 	= estimate.lambda(X_std, verbose=FALSE),
-    # 	"Touloumis" = min(get_lambda.Touloumis( t(X) ), .99) )     
-
-    # get strunk eigen-values
-    # ev_shrink = (ev*(1-lambda) + lambda)
-    # ev_shrink
-
-    # augment with zero eigen values witjh lambda added
-    # c(ev_shrink, rep(lambda, n_samples-length(ev_shrink)))
-# }
 
 #' Regularized log determinant
 #'
 #' Regularized log determinant for low rank matrix
 #'
 #' @param X data matrix
-#' @param method strink using either "Touloumis" or "Strimmer" method
+#' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
+#' @param ... additional arguments passed to adjusted_eigen_values
 #'
 #' @export
-rlogDet = function( X, method=c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),... ){
+rlogDet = function( X, shrink.method=c("var_equal", "var_unequal", "none"), ...){
+	#, "Strimmer", "pseudodet"
 
 	# get non-zero eigen values
-	ev = adjusted_eigen_values( X, method,... )
+	ev = adjusted_eigen_values( X, shrink.method, ...)
 
 	# compute log determinant
 	logDet = sum(log(ev))
 
-	attr(logDet, 'lambda') = attr(ev, "lambda")
-	attr(logDet, 'gdf') = attr(ev, "gdf")
+	# return lambda and generalized degrees of freedom for covariance estimation
+	attr(logDet, 'param') = attr(ev, "param")
+
 	logDet
 }
 
-
+#' @importFrom stats var cov
 shrinkcovmat.unequal_lambda = function (data, centered = FALSE){
     if (!is.matrix(data))
         data <- as.matrix(data)
@@ -223,6 +202,7 @@ shrinkcovmat.unequal_lambda = function (data, centered = FALSE){
 }
 
 
+#' @importFrom stats var cov
 shrinkcovmat.equal_lambda = function (data, centered = FALSE){
     if (!is.matrix(data))
         data <- as.matrix(data)

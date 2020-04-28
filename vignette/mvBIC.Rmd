@@ -137,39 +137,39 @@
 
 # bestModel = mvForwardStepwise( Y, ~ 1, data=iris, variables=colnames(iris)[3:5], deltaCutoff=10)
 
-# q()
-# R
+q()
+R
 
-# library(variancePartition)
-# library(mvBIC)
+library(variancePartition)
+library(mvBIC)
 
-# data(varPartData)
+data(varPartData)
 
-# # add some noise variables
-# info$x = rnorm(nrow(info))
-# info$y = rnorm(nrow(info))
-# info$z = rnorm(nrow(info))
+# add some noise variables
+info$x = rnorm(nrow(info))
+info$y = rnorm(nrow(info))
+info$z = rnorm(nrow(info))
 
-# variables = c("(1|Batch)", "(1|Tissue)", "Age", "Height", "x", "y", "z")
+variables = c("(1|Batch)", "(1|Tissue)", "Age", "Height", "x", "y", "z")
 
-# baseFormula = ~ (1|Individual)
+baseFormula = ~ (1|Individual)
 
-# res = mvForwardStepwise( geneExpr, baseFormula, info, variables)
-
-
-# variables = c("Batch", "Age", "Height", "x", "y", "z")
-
-# res1 = mvForwardStepwise( geneExpr, ~1, info, variables, logDetMethod="Touloumis_unequal")
-
-# res2 = mvForwardStepwise( geneExpr, ~1, info, variables, logDetMethod="pseudodet")
+res = mvForwardStepwise( geneExpr, baseFormula, info, variables)
 
 
+variables = c("Batch", "Age", "Height", "x", "y", "z")
 
-# Y = with(iris, rbind(Sepal.Width, Sepal.Length))
+res1 = mvForwardStepwise( geneExpr, ~1, info, variables, logDetMethod="Touloumis_unequal")
 
-# bestModel1 = mvForwardStepwise( Y, ~ 1, data=iris, variables=colnames(iris)[3:5], logDetMethod="Touloumis_unequal")
+res2 = mvForwardStepwise( geneExpr, ~1, info, variables, logDetMethod="pseudodet")
 
-# bestModel2 = mvForwardStepwise( Y, ~ 1, data=iris, variables=colnames(iris)[3:5], , logDetMethod="pseudodet")
+
+
+Y = with(iris, rbind(Sepal.Width, Sepal.Length))
+
+bestModel1 = mvForwardStepwise( Y, ~ 1, data=iris, variables=colnames(iris)[3:5], logDetMethod="Touloumis_unequal")
+
+bestModel2 = mvForwardStepwise( Y, ~ 1, data=iris, variables=colnames(iris)[3:5], , logDetMethod="pseudodet")
 
 
 

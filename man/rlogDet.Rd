@@ -4,16 +4,14 @@
 \alias{rlogDet}
 \title{Regularized log determinant}
 \usage{
-rlogDet(
-  X,
-  method = c("Touloumis_equal", "Touloumis_unequal", "Strimmer", "pseudodet"),
-  ...
-)
+rlogDet(X, shrink.method = c("var_equal", "var_unequal", "none"), ...)
 }
 \arguments{
 \item{X}{data matrix}
 
-\item{method}{strink using either "Touloumis" or "Strimmer" method}
+\item{shrink.method}{Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses}
+
+\item{...}{additional arguments passed to adjusted_eigen_values}
 }
 \description{
 Regularized log determinant for low rank matrix

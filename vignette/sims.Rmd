@@ -1,6 +1,6 @@
 
 ---
-title: "Power analysis for mvBIC"
+title: "Power analysis for mvIC"
 subtitle: ''
 author: "Developed by [Gabriel Hoffman](http://gabrielhoffman.github.io/)"
 date: "Run on `r Sys.time()`"
@@ -22,7 +22,7 @@ vignette: >
 R CMD INSTALL -l $R_LIBS_USER ../
 
 source ~/.bash_profile
-cd /hpc/users/hoffmg01/build2/mvBIC/vignette
+cd /hpc/users/hoffmg01/build2/mvIC/vignette
 module load R/3.6.0 pandoc openssl boost git
 git pull origin dev
 alias R='R --quiet --no-save --no-restore-data'
@@ -39,8 +39,8 @@ rmarkdown::render("sims.Rmd", output_dir='./', intermediates_dir='./')
 
 
 # run analysis
-# cd /Users/gabrielhoffman/workspace/repos/mvBIC/vignettes
-# cd /hpc/users/hoffmg01/build2/mvBIC/vignettes
+# cd /Users/gabrielhoffman/workspace/repos/mvIC/vignettes
+# cd /hpc/users/hoffmg01/build2/mvIC/vignettes
 
 # rm -fr sims_*
  --->
@@ -79,7 +79,7 @@ devtools::reload("/Users/gabrielhoffman/workspace/repos/mvBIC")
 
 ```{r basic}
 n = 100
-p = 200
+p = 10
 m_active = 1
 X = matrix(rnorm(n*p), n, p)
 colnames(X) = paste0('X_', 1:p)
@@ -90,7 +90,7 @@ trueSet = sort(colnames(X)[1:m_active])
 
 bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X))
 
-bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), useMVBIC=FALSE)
+bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), criterion="sum BIC")
 ```
 
 
@@ -106,7 +106,7 @@ library(gridExtra)
 
 set.seed(1)
 
-n_reps = 200   
+n_reps = 10   
 n = 100 # number of samples
 # p = 10 # number of genes
 # m_active = 2 # number of variables affecting phenotype
@@ -116,13 +116,13 @@ n_clusters = 5
  # summary(lm(Y~X[,1]))
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
-m_active_array = c(1, 2, 3)
-signalFraction = seq(.2, .8, by=.2)
-ngenes_array = c(round(seq(10, 100, length.out=5), 0), 200, 500, 1000)
-rho_array = seq(0, .98, length.out=20)
+m_active_array = 1#c(1, 2, 3)
+signalFraction = .9#seq(.2, .8, by=.2)
+ngenes_array = 200#c(round(seq(10, 100, length.out=5), 0), 200, 500, 1000)
+rho_array = seq(0, .98, length.out=5)
 
 resRecovery = lapply(1:n_reps, function(k){
-
+    
   set.seed(k)
 
   resRecovery = lapply(m_active_array, function(m_active){
@@ -130,7 +130,7 @@ resRecovery = lapply(1:n_reps, function(k){
     # simulate variables
     X = matrix(rnorm(m_total*n), n, m_total)
     colnames(X) = paste0('X_', 1:m_total)
-    trueSet = sort(colnames(X)[1:m_active])
+    trueSet = c('1', sort(colnames(X)[1:m_active]))
 
     resRecovery = lapply(ngenes_array, function(p){
 
@@ -164,14 +164,14 @@ resRecovery = lapply(1:n_reps, function(k){
             Y = eta + Noise*fctr
             # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
 
-            message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac =  ', sigFrac,  ' m_active = ', m_active, '        ')  
+            message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ')  
 
             # Multivariate methods
-            methods = c( "Touloumis_equal") 
+            methods = c( "var_equal", "var_unequal") 
             criteria = c("AIC")#, "AICC", "BIC") 
             res = lapply( methods, function(method){
               res = lapply( criteria, function(criterion){
-                bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), criterion=criterion, verbose=FALSE, logDetMethod=method, deltaCutoff=5)
+                bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), criterion=criterion, verbose=FALSE, shrink.method=method)
                 # test of selected set is the true set  
 
                 vars = subset(bestModel$trace, isAdded == "yes")$variable
@@ -238,7 +238,7 @@ figList = lapply(unique(df$sigFrac), function(v){
 ggplot(subset(df, sigFrac==v), aes(rho, recoveryRate, color=paste(criterion, '-', method), fill=paste(criterion, '-', method))) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab(bquote(Correlation~(rho))) + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) + facet_wrap(~m_active+p, ncol=length(ngenes_array)  ) + ggtitle(v)
 })
 
-# pdf("~/www/mvBIC.pdf", width=12, height=120)
+# pdf("~/www/mvIC.pdf", width=12, height=120)
 do.call("grid.arrange", c(figList, ncol=1))
 # dev.off()
 
@@ -260,7 +260,7 @@ resRecovery = lapply( rho_array, function(rho){
     message("\rk = ", k, '  p = ', p, ' rho = ', rho, ' sigFrac =  ', sigFrac,  ' m_active = ', m_active, '        ')  
 
     # try 3 logDet methods
-    methods = c( "Touloumis_unequal")#, "Touloumis_equal")  #"Strimmer" , "pseudodet"
+    methods = c( "var_unequal")#, "var_equal")  #"Strimmer" , "pseudodet"
     res = sapply( methods, function(method){
       bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method, deltaCutoff=5)
       # test of selected set is the true set
@@ -271,14 +271,14 @@ resRecovery = lapply( rho_array, function(rho){
     names(res) = methods
   
     # fit naive model
-    bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), useMVBIC=FALSE, verbose=FALSE, deltaCutoff=5)
+    bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), usemvIC=FALSE, verbose=FALSE, deltaCutoff=5)
 
     # test of selected set is the true set
     vars = subset(bestModelNaive$trace, isAdded == "yes")$variable
     vars = as.character(vars)
     result_naive = identical( sort(vars), trueSet)
 
-    data.frame( method = c(paste("mvBIC", methods, sep=' - '), 'naive'),
+    data.frame( method = c(paste("mvIC", methods, sep=' - '), 'naive'),
                 recovery = c(res, result_naive),
                 rho = rho,
                 k = k,
@@ -318,14 +318,14 @@ do.call("grid.arrange", c(figList, ncol=1))
 <!---
 
 # naive
-mvBIC_fit( t(Y), ~ 1, X, useMVBIC=FALSE)
-mvBIC_fit( t(Y), ~ X_1, X, useMVBIC=FALSE)
+mvIC_fit( t(Y), ~ 1, X, usemvIC=FALSE)
+mvIC_fit( t(Y), ~ X_1, X, usemvIC=FALSE)
 
-method = "Touloumis_unequal"
-# method="Touloumis_equal"
-res1 = mvBIC_fit( t(scale(Y)), ~ X_1 , X, logDetMethod=method)
+method = "var_unequal"
+# method="var_equal"
+res1 = mvIC_fit( t(scale(Y)), ~ X_1 , X, shrink.method=method)
 res1@params
-res2 = mvBIC_fit( t(scale(Y)), ~ 1, X, logDetMethod=method)
+res2 = mvIC_fit( t(scale(Y)), ~ 1, X, method)
 res2@params
 res1-res2
 
@@ -334,33 +334,33 @@ res1-res2
 residMatrix1 = t(residuals(lm(scale(Y) ~ X_1, data=as.data.frame(X))))
 residMatrix2 = t(residuals(lm(scale(Y) ~ 1, data=as.data.frame(X))))
 
-# sum(log(adjusted_eigen_values(residMatrix1, method="Touloumis_unequal")))
-# sum(log(adjusted_eigen_values(residMatrix2, method="Touloumis_unequal")))
+# sum(log(adjusted_eigen_values(residMatrix1, method="var_unequal")))
+# sum(log(adjusted_eigen_values(residMatrix2, method="var_unequal")))
 
-# sum(log(adjusted_eigen_values(residMatrix1, method="Touloumis_equal")))
-# sum(log(adjusted_eigen_values(residMatrix2, method="Touloumis_equal")))
+# sum(log(adjusted_eigen_values(residMatrix1, method="var_equal")))
+# sum(log(adjusted_eigen_values(residMatrix2, method="var_equal")))
 
-res1 = rlogDet( residMatrix1, method="Touloumis_unequal" )
-res2 = rlogDet( residMatrix2, method="Touloumis_unequal" )
+res1 = rlogDet( residMatrix1, method="var_unequal" )
+res2 = rlogDet( residMatrix2, method="var_unequal" )
 res1 - res2
 
-resA = rlogDet( residMatrix1, method="Touloumis_equal" )
-resB = rlogDet( residMatrix2, method="Touloumis_equal" )
+resA = rlogDet( residMatrix1, method="var_equal" )
+resB = rlogDet( residMatrix2, method="var_equal" )
 resA - resB
 
 
 
 
-mvBIC:::mvBIC_from_residuals( residMatrix1, 3, logDetMethod="Touloumis_unequal")
-mvBIC:::mvBIC_from_residuals( residMatrix2, 2, logDetMethod="Touloumis_unequal"  )
+mvIC:::mvIC_from_residuals( residMatrix1, 3, logDetMethod="var_unequal")
+mvIC:::mvIC_from_residuals( residMatrix2, 2, logDetMethod="var_unequal"  )
 
 
 
-rlogDet( residMatrix1, method="Touloumis_unequal" )
-rlogDet( residMatrix2, method="Touloumis_unequal" )
+rlogDet( residMatrix1, method="var_unequal" )
+rlogDet( residMatrix2, method="var_unequal" )
 
-rlogDet( residMatrix1, method="Touloumis_equal" )
-rlogDet( residMatrix2, method="Touloumis_equal" )
+rlogDet( residMatrix1, method="var_equal" )
+rlogDet( residMatrix2, method="var_equal" )
 
 rlogDet( residMatrix1, method="Str" )
 rlogDet( residMatrix2, method="Str" )
@@ -461,18 +461,18 @@ bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X)[1:10])
 
 method = "rlogDet"
 
-a = mvBIC_fit(t(Y), ~ X_3 , X, verbose=TRUE, logDetMethod = method)
-b = mvBIC_fit(t(Y), ~ X_10 + X_5 + X_9, X, verbose=TRUE, logDetMethod = method)
+a = mvIC_fit(t(Y), ~ X_3 , X, verbose=TRUE, logDetMethod = method)
+b = mvIC_fit(t(Y), ~ X_10 + X_5 + X_9, X, verbose=TRUE, logDetMethod = method)
 as.numeric(a - b)    
 
 
-a = mvBIC_fit(t(svd(Y)$u), ~ X_3 , X, verbose=TRUE, logDetMethod = method)
-b = mvBIC_fit(t(svd(Y)$u), ~ X_10 + X_5 + X_9, X, verbose=TRUE, logDetMethod = method)
+a = mvIC_fit(t(svd(Y)$u), ~ X_3 , X, verbose=TRUE, logDetMethod = method)
+b = mvIC_fit(t(svd(Y)$u), ~ X_10 + X_5 + X_9, X, verbose=TRUE, logDetMethod = method)
 as.numeric(a - b)    
 
 
-a = mvBIC_fit(t(svd(Y)$u), ~ X_3 , X, verbose=TRUE, useMVBIC=FALSE, logDetMethod = method)
-b = mvBIC_fit(t(svd(Y)$u), ~ X_10 + X_5 + X_9, X, verbose=TRUE, useMVBIC=FALSE, logDetMethod = method)
+a = mvIC_fit(t(svd(Y)$u), ~ X_3 , X, verbose=TRUE, usemvIC=FALSE, logDetMethod = method)
+b = mvIC_fit(t(svd(Y)$u), ~ X_10 + X_5 + X_9, X, verbose=TRUE, usemvIC=FALSE, logDetMethod = method)
 as.numeric(a - b)    
 
 
@@ -714,7 +714,7 @@ idx = colnames(res2) %in% c('n', 'p', 'True')
 res2 = cbind(n=res2$n, p=res2$p, (res2[,!idx] - res$True))
 df = melt(res2, id.vars=c('n', 'p'))
 
-pdf("~/www/mvBIC.pdf")
+pdf("~/www/mvIC.pdf")
 ggplot(subset(df, variable!="Population"), aes(n, value, color=variable)) + geom_point() + theme_bw() + theme(aspect.ratio=1) + ylab("Percent error") + facet_wrap(~p)
 dev.off()
 
@@ -765,7 +765,7 @@ obj = optimize( function(alpha) logML(t(X), target, alpha), interval=c(1e-6, 1-1
 
 
 phase2_formula <- "~Dx.Tissue + (1 | Individual_ID) + RIN2 + (1 | Institution) + ageOfDeath + RIN + PMI + EV.1 + (1 | Reported_Gender) + EV.2 + EV.3 + EV.4"
-phase3 <- mvBIC::mvForwardStepwise(exprObj = subset_CQN[1:10,],
+phase3 <- mvIC::mvForwardStepwise(exprObj = subset_CQN[1:10,],
                          baseFormula = phase2_formula, 
                          data = COVARIATES,
                          variables = array(c("scale(IntragenicRate)", "scale(IntronicRate)","IntergenicRate)","scale(rRNARate)", "scale(TotalReads)", "scale(GenesDetected)", "scale(MappedReads)")))
