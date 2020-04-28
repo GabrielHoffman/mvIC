@@ -117,7 +117,7 @@ n_clusters = 5
 # lapply(coef(summary(lm(Y~X[,1]))), function(fit) fit[2,4])
 
 m_active_array = 1:2#c(1, 2, 3)
-signalFraction = .seq(.2, .8, by=.2)
+signalFraction = seq(.2, .8, by=.2)
 ngenes_array = c(10, 50, 100, 200) #c(round(seq(10, 100, length.out=5), 0), 200, 500, 1000)
 rho_array = seq(0, .98, length.out=6)
 
