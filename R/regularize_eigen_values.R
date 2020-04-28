@@ -42,7 +42,7 @@ adjusted_eigen_values = function( X, shrink.method=c("var_equal", "var_unequal",
 
 		# with __equal_ variances, 
 		 # sigmahat <- (1 - lambda_hat) * sample_covariance_matrix + diag(nu_hat * lambda_hat, p)
-		res = shrinkcovmat.equal_lambda( X )
+		res = shrinkcovmat.equal_lambda( X, centered=TRUE )
 		lambda = res$lambda_hat
 		nu_hat = res$nu_hat
 

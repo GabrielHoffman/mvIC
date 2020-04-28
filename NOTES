@@ -1,5 +1,7 @@
 TODO
 
+if residual variances vary alow, var_equal can perform poorly
+
 Add warning about small eigen-values or too many responses for shrink.method = "none"
 
 Add faster method to approximate Touloumis_unequal
