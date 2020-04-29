@@ -175,7 +175,7 @@ resRecovery = lapply(1:n_reps, function(k){
             message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ')  
 
             # Multivariate methods
-            methods = c( "var_equal", "var_unequal") 
+            methods = c( "var_equal")#, "var_unequal") 
             criteria = c("AIC")#, "AICC", "BIC") 
             res = lapply( methods, function(method){
               res = lapply( criteria, function(criterion){
