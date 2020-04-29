@@ -125,7 +125,7 @@ rho_array = seq(0, .98, length.out=10)
 
 
 n_reps = 10
-n = 100 # number of samples
+n = 400 # number of samples
 m_active_array = 2
 signalFraction = .7
 ngenes_array = 300
@@ -171,7 +171,6 @@ resRecovery = lapply(1:n_reps, function(k){
           resRecovery = lapply(signalFraction, function(sigFrac){
 
             fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
-
             Y = eta + Noise*fctr
             # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
 
@@ -267,10 +266,10 @@ mvIC_fit( t(Y), ~ X_1, X, criterion="sum BIC")
 method = "var_unequal"
 # method="var_equal"
 res1 = mvIC_fit( t(scale(Y)), ~ X_1, X, shrink.method=method)
-res1@params
 res2 = mvIC_fit( t(scale(Y)), ~ 1, X, , shrink.method=method)
-res2@params
 res1-res2
+res1@params
+res2@params
 
 
 with(res1@params, dataTerm + 2 * (p*(m-1) + df_cov))[1]
@@ -296,33 +295,34 @@ plotCorrMatrix(Sigma, sort="none", dendrogram="none")
 plotCorrMatrix(res$Sigmasample, sort="none", dendrogram="none")
 plotCorrMatrix(res$Sigmahat, sort="none", dendrogram="none")
 
+
 res = lapply(seq(0, .99, length.out=20), function(rho){
   Sigma = matrix(rho, p, p)
   diag(Sigma) = 1
   Noise = rmvnorm(n, sig=Sigma)
-  fctr = (1-sigFrac)/sigFrac
-  Y =  Noise*fctr
+  fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
+  Y = eta + Noise*fctr
   residMatrix1 = t(residuals(lm(scale(Y) ~ X_1, data=as.data.frame(X))))
   residMatrix2 = t(residuals(lm(scale(Y) ~ 1, data=as.data.frame(X))))
 
   f1 = shrinkcovmat.unequal( residMatrix1 )
   f2 = shrinkcovmat.unequal( residMatrix2 )
 
-  # a = gcShrink( residMatrix1, var=3, cor=1, plot=FALSE)
-  a = gcShrink( residMatrix1, var=2, cor=1, plot=FALSE)
+  a = gcShrink( residMatrix1, var=3, cor=1, plot=FALSE)
+  b = gcShrink( residMatrix1, var=2, cor=1, plot=FALSE)
 
-  data.frame(rho,
-            true = sum(log(eigen(Sigma, only.values=TRUE)$values)),
-            shrinkCovmat = sum(log(eigen(f1$Sigmahat, only.values=TRUE)$values)),
-            gcShrink = sum(log(eigen(a$sigmahat, only.values=TRUE)$values)))
-
+  # data.frame(rho,
+  #           true = sum(log(eigen(Sigma, only.values=TRUE)$values)),
+  #           shrinkCovmat = sum(log(eigen(f1$Sigmahat, only.values=TRUE)$values)),
+  #           gcShrink = sum(log(eigen(a$sigmahat, only.values=TRUE)$values)))
            
 
-  # data.frame( rho = rho, 
-  #             lambda1 = f1$lambdahat,
-  #             lambda2 = f2$lambdahat,
-  #             lambda_strimmer = attr(cov.shrink(t(residMatrix1), lambda.var=0, verbose=FALSE),"lambda"), 
-  #             alpha = a$optimalpha  )
+  data.frame( rho = rho, 
+              lambda1 = f1$lambdahat,
+              lambda2 = f2$lambdahat,
+              lambda_strimmer = attr(cov.shrink(t(residMatrix1), lambda.var=0, verbose=FALSE),"lambda"), 
+              alpha = a$optimalpha, 
+              alpha_equal = b$optimalpha   )
 })
 res = do.call(rbind, res)
 
