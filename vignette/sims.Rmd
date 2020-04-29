@@ -128,7 +128,7 @@ n = 100 # number of samples
 m_active_array = 2
 signalFraction = .5
 ngenes_array = 500
-rho_array = seq(0, .98, length.out=12)
+rho_array = seq(0, .98, length.out=5)
 
 
 resRecovery = lapply(1:n_reps, function(k){
