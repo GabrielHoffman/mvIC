@@ -1,19 +1,19 @@
 
 <div align="right">
-<img src="https://users.hpc.mssm.edu/~hoffmg01/software/mvBIC/mvBIC_logo.png" alt="mvBIC logo" width="100px"><br>
+<img src="https://users.hpc.mssm.edu/~hoffmg01/software/mvIC/mvIC_logo.png" alt="mvIC logo" width="100px"><br>
 </div>
 
 
 # Evaluate BIC for multivariate model selection
 
-mvBIC extends the standard the standard Bayesian Information Criterion (BIC) to the case of multivariate regression.  The model fit across many response variables is evaluated and the criterion explicitly considers correlation between reponses.  mvBIC is applicable to linear and linear mixed models.
+mvIC extends the standard the standard Bayesian Information Criterion (BIC) to the case of multivariate regression.  The model fit across many response variables is evaluated and the criterion explicitly considers correlation between reponses.  mvIC is applicable to linear and linear mixed models.
 
-Forward stepwise regression with the mvBIC criterion enables automated variable selection for high dimensional datasets.
+Forward stepwise regression with the mvIC criterion enables automated variable selection for high dimensional datasets.
 
 
 ## Installation
 ```r
-devtools::install_github("GabrielHoffman/mvBIC", repos=BiocManager::repositories())
+devtools::install_github("GabrielHoffman/mvIC", repos=BiocManager::repositories())
 ```
 This automatically installs dependencies from [Bioconductor](https://bioconductor.org)
 
@@ -24,9 +24,9 @@ This automatically installs dependencies from [Bioconductor](https://bioconducto
 # Predict Sepal width and Length given Species
 # Evaluate model fit
 fit1 = lm( cbind(Sepal.Width, Sepal.Length) ~ Species, data=iris)
-score = mvBIC( fit1 )
+score = mvIC( fit1 )
 ```
-The variable `score` now contains the `mvBIC` value and method used. It also contains values for `n` samples, `p` response variables and `m` parameters.
+The variable `score` now contains the `mvIC` value and method used. It also contains values for `n` samples, `p` response variables and `m` parameters.
 ```r
 print(score)
 [1] 979.6136
@@ -39,9 +39,9 @@ attr(,"params")
 
 ```r
 # add Petal width and length
-# smaller mvBIC means better model
+# smaller mvIC means better model
 fit2 = lm( cbind(Sepal.Width, Sepal.Length) ~ Petal.Width + Petal.Length + Species, data=iris)
-mvBIC( fit2 )
+mvIC( fit2 )
 ```
 
 #### Forward stepwise regression
@@ -70,4 +70,4 @@ If a random effect is specified, a linear mixed model is fit and the number of p
 
 
 ## Documentation
-See [manual](https://users.hpc.mssm.edu/~hoffmg01/software/mvBIC/mvBIC-manual.pdf) for examples and documentation.
+See [manual](https://users.hpc.mssm.edu/~hoffmg01/software/mvIC/mvIC-manual.pdf) for examples and documentation.
