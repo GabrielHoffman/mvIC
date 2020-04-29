@@ -123,10 +123,11 @@ ngenes_array = c(10, 20, 40, 60, 80, 100, 200, 500)
 rho_array = seq(0, .98, length.out=10)
 
 
-# m_active_array = 1
-# signalFraction = .8
-# ngenes_array = 100
-# rho_array = seq(0, .98, length.out=12)
+n = 100 # number of samples
+m_active_array = 2
+signalFraction = .5
+ngenes_array = 500
+rho_array = seq(0, .98, length.out=12)
 
 
 resRecovery = lapply(1:n_reps, function(k){
@@ -175,13 +176,16 @@ resRecovery = lapply(1:n_reps, function(k){
             message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ')  
 
             # Multivariate methods
-            methods = c( "var_equal")#, "var_unequal") 
-            criteria = c("AIC")#, "AICC", "BIC") 
+            methods = c( "var_equal")
+            if( p >= 500){
+              methods = c(methods, "var_unequal") 
+            }
+            criteria = c("AIC")#, "BIC") 
             res = lapply( methods, function(method){
               res = lapply( criteria, function(criterion){
                 bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), criterion=criterion, verbose=FALSE, shrink.method=method)
-                # test of selected set is the true set  
 
+                # test of selected set is the true set  
                 vars = subset(bestModel$trace, isAdded == "yes")$variable
                 vars = as.character(vars)
                 data.frame(criterion, 
