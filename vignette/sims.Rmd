@@ -155,15 +155,15 @@ resRecovery = lapply(1:n_reps, function(k){
 
         resRecovery = lapply( rho_array, function(rho){
 
-          sigList = lapply(unique(clustID), function(id){
-            count = sum(clustID == id)                
-            Sigma = matrix(rho, count, count)
-            diag(Sigma) = 1
-            Sigma
-            })
-          Sigma = as.matrix(bdiag(sigList))
-          # Sigma = matrix(rho, p, p)
-          # diag(Sigma) = 1
+          # sigList = lapply(unique(clustID), function(id){
+          #   count = sum(clustID == id)                
+          #   Sigma = matrix(rho, count, count)
+          #   diag(Sigma) = 1
+          #   Sigma
+          #   })
+          # Sigma = as.matrix(bdiag(sigList))
+          Sigma = matrix(rho, p, p)
+          diag(Sigma) = 1
           # Sigma = AR1(p, rho)
           Noise = rmvnorm(n, sig=Sigma)
 
