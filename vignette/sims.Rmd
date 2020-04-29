@@ -126,7 +126,7 @@ rho_array = seq(0, .98, length.out=10)
 n_reps = 10
 n = 100 # number of samples
 m_active_array = 2
-signalFraction = .5
+signalFraction = .7
 ngenes_array = 300
 rho_array = seq(0, .98, length.out=5)
 
@@ -151,7 +151,7 @@ resRecovery = lapply(1:n_reps, function(k){
         eta = X[,1:m_active,drop=FALSE] %*% beta 
 
         # changes correlation structure of noise. 
-        clustID = sample.int(n_clusters, p, replace=TRUE)
+        clustID = sample.int(n_clusters, p, prob = dexp(1:n_clusters, .5), replace=TRUE)
 
         resRecovery = lapply( rho_array, function(rho){
 
