@@ -123,6 +123,7 @@ ngenes_array = c(10, 20, 40, 60, 80, 100, 200, 500)
 rho_array = seq(0, .98, length.out=10)
 
 
+n_reps = 10
 n = 100 # number of samples
 m_active_array = 2
 signalFraction = .5
