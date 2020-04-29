@@ -127,7 +127,7 @@ n_reps = 10
 n = 100 # number of samples
 m_active_array = 2
 signalFraction = .7
-ngenes_array = 300
+ngenes_array = 3000
 rho_array = seq(0, .98, length.out=5)
 
 
