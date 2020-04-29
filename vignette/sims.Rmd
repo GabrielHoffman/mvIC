@@ -128,7 +128,7 @@ n = 100 # number of samples
 m_active_array = 2
 signalFraction = .7
 ngenes_array = 3000
-rho_array = seq(0, .98, length.out=5)
+rho_array = seq(0, .98, length.out=8)
 
 
 resRecovery = lapply(1:n_reps, function(k){
@@ -178,7 +178,7 @@ resRecovery = lapply(1:n_reps, function(k){
 
             # Multivariate methods
             methods = c( "var_equal")
-            if( p >= 200){
+            if( p < 200){
               methods = c(methods, "var_unequal") 
             }
             criteria = c("AIC")#, "BIC") 
