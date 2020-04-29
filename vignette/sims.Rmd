@@ -78,6 +78,7 @@ Simulation, show probability of selection true model increases with number of fe
 
 devtools::reload("/Users/gabrielhoffman/workspace/repos/mvIC")
 
+
 ```{r basic}
 n = 100
 p = 10
@@ -123,12 +124,12 @@ ngenes_array = c(10, 20, 40, 60, 80, 100, 200, 500)
 rho_array = seq(0, .98, length.out=10)
 
 
-n_reps = 30
+n_reps = 10
 n = 100 # number of samples
 m_active_array = 2
 signalFraction = .7
 ngenes_array = 300
-rho_array = seq(0, .98, length.out=20)
+rho_array = seq(0, .25, length.out=5)
 
 
 resRecovery = lapply(1:n_reps, function(k){
@@ -178,9 +179,9 @@ resRecovery = lapply(1:n_reps, function(k){
 
             # Multivariate methods
             methods = c( "var_equal")
-            if( p < 200){
+            # if( p < 200){
               methods = c(methods, "var_unequal") 
-            }
+            # }
             criteria = c("AIC")#, "BIC") 
             res = lapply( methods, function(method){
               res = lapply( criteria, function(criterion){
@@ -259,77 +260,6 @@ do.call("grid.arrange", c(figList, ncol=1))
 
 <!---
 
-resRecovery = lapply( rho_array, function(rho){
-  resRecovery = lapply(1:n_reps, function(k){
-    set.seed(k)
-    Sigma = AR1(p, rho)
-    Noise = rmvnorm(n, sig=Sigma)
-
-    fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
-
-    Y = eta + Noise*fctr
-    # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
-
-    message("\rk = ", k, '  p = ', p, ' rho = ', rho, ' sigFrac =  ', sigFrac,  ' m_active = ', m_active, '        ')  
-
-    # try 3 logDet methods
-    methods = c( "var_unequal")#, "var_equal")  #"Strimmer" , "pseudodet"
-    res = sapply( methods, function(method){
-      bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X), verbose=FALSE, logDetMethod=method, deltaCutoff=5)
-      # test of selected set is the true set
-      vars = subset(bestModel$trace, isAdded == "yes")$variable
-      vars = as.character(vars)
-      identical( sort(vars), trueSet)
-      })
-    names(res) = methods
-  
-    # fit naive model
-    bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), usemvIC=FALSE, verbose=FALSE, deltaCutoff=5)
-
-    # test of selected set is the true set
-    vars = subset(bestModelNaive$trace, isAdded == "yes")$variable
-    vars = as.character(vars)
-    result_naive = identical( sort(vars), trueSet)
-
-    data.frame( method = c(paste("mvIC", methods, sep=' - '), 'naive'),
-                recovery = c(res, result_naive),
-                rho = rho,
-                k = k,
-                p = p,
-                sigFrac = sigFrac,
-                m_active = m_active)
-  })
- do.call(rbind, resRecovery)
- })
-resRecovery = do.call(rbind, resRecovery)
-
-
-
-resRecovery = data.table(resRecovery)
-
-# summarize 
-df = resRecovery[,data.frame(recoveryRate = sum(recovery)/length(recovery)),by=c('rho', 'p', 'sigFrac', 'm_active','method')]
-df$sd = with(df, sqrt(recoveryRate*(1-recoveryRate)/n_reps))
-df$up = with(df, recoveryRate + sd)
-df$down = with(df, recoveryRate - sd)
-
-cols = c("red", "orange", "dodgerblue", "green", "black")
-
-figList = lapply(unique(df$sigFrac), function(v){
-ggplot(subset(df, sigFrac==v), aes(rho, recoveryRate, color=method, fill=method)) + geom_ribbon(aes(ymin=down, ymax=up), alpha=.3, linetype=0) + geom_line() + geom_point() + scale_color_manual("Method", values = cols ) + scale_fill_manual("Method", values = cols ) + xlab(bquote(Correlation~(rho))) + ylab("Power to recover true model") + theme_bw() + theme(aspect.ratio=1) + ylim(0, 1) + facet_wrap(~m_active+p, ncol=length(ngenes_array)  ) + ggtitle(v)
-})
-
-do.call("grid.arrange", c(figList, ncol=1))
-
-
-
-
-
---->
-
-
-<!---
-
 # naive
 mvIC_fit( t(Y), ~ 1, X, criterion="sum BIC")
 mvIC_fit( t(Y), ~ X_1, X, criterion="sum BIC")
@@ -343,15 +273,14 @@ res2@params
 res1-res2
 
 
+with(res1@params, dataTerm + 2 * (p*(m-1) + df_cov))[1]
+with(res2@params, dataTerm + 2 * (p*(m-1) + df_cov))[1]
+
+
 
 residMatrix1 = t(residuals(lm(scale(Y) ~ X_1, data=as.data.frame(X))))
 residMatrix2 = t(residuals(lm(scale(Y) ~ 1, data=as.data.frame(X))))
 
-# sum(log(adjusted_eigen_values(residMatrix1, method="var_unequal")))
-# sum(log(adjusted_eigen_values(residMatrix2, method="var_unequal")))
-
-# sum(log(adjusted_eigen_values(residMatrix1, method="var_equal")))
-# sum(log(adjusted_eigen_values(residMatrix2, method="var_equal")))
 
 res1 = rlogDet( residMatrix1, shrink.method="var_unequal" )
 res2 = rlogDet( residMatrix2, shrink.method="var_unequal" )
@@ -360,6 +289,47 @@ res1 - res2
 resA = rlogDet( residMatrix1, shrink.method="var_equal" )
 resB = rlogDet( residMatrix2, shrink.method="var_equal" )
 resA - resB
+
+
+res = shrinkcovmat.unequal(residMatrix1)
+plotCorrMatrix(Sigma, sort="none", dendrogram="none")
+plotCorrMatrix(res$Sigmasample, sort="none", dendrogram="none")
+plotCorrMatrix(res$Sigmahat, sort="none", dendrogram="none")
+
+res = lapply(seq(0, .99, length.out=20), function(rho){
+  Sigma = matrix(rho, p, p)
+  diag(Sigma) = 1
+  Noise = rmvnorm(n, sig=Sigma)
+  fctr = (1-sigFrac)/sigFrac
+  Y =  Noise*fctr
+  residMatrix1 = t(residuals(lm(scale(Y) ~ X_1, data=as.data.frame(X))))
+  residMatrix2 = t(residuals(lm(scale(Y) ~ 1, data=as.data.frame(X))))
+
+  f1 = shrinkcovmat.unequal( residMatrix1 )
+  f2 = shrinkcovmat.unequal( residMatrix2 )
+
+  # a = gcShrink( residMatrix1, var=3, cor=1, plot=FALSE)
+  a = gcShrink( residMatrix1, var=2, cor=1, plot=FALSE)
+
+  data.frame(rho,
+            true = sum(log(eigen(Sigma, only.values=TRUE)$values)),
+            shrinkCovmat = sum(log(eigen(f1$Sigmahat, only.values=TRUE)$values)),
+            gcShrink = sum(log(eigen(a$sigmahat, only.values=TRUE)$values)))
+
+           
+
+  # data.frame( rho = rho, 
+  #             lambda1 = f1$lambdahat,
+  #             lambda2 = f2$lambdahat,
+  #             lambda_strimmer = attr(cov.shrink(t(residMatrix1), lambda.var=0, verbose=FALSE),"lambda"), 
+  #             alpha = a$optimalpha  )
+})
+res = do.call(rbind, res)
+
+df = melt(res, id.var="rho")
+
+ggplot(df, aes(rho, value, color=variable)) + geom_line() + theme_bw() + theme(aspect.ratio=1) + geom_vline(xintercept=.14, linetype="dashed")
+
 
 
 

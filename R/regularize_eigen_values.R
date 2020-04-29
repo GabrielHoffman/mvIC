@@ -75,7 +75,7 @@ adjusted_eigen_values = function( X, shrink.method=c("var_equal", "var_unequal",
 
 	}else if(shrink.method == "var_unequal"){
 
-		if( missing(lambda) ){
+		# if( missing(lambda) ){
 			# with __unequal__ variances,
 			# Sigmahat = (1-lambda) + U D U^T + lambda * diag(sample_variances)
 			# the eigen values cannot be extracted from D directly
@@ -85,19 +85,24 @@ adjusted_eigen_values = function( X, shrink.method=c("var_equal", "var_unequal",
 			sigma_hat = res$Sigmahat
 			ev_return = eigen(res$Sigmahat, symmetric=TRUE, only.values=TRUE)$values
 
+            res = gcShrink( X, var=2, cor=1, plot=FALSE)
+            ev_return = eigen(res$sigmahat, symmetric=TRUE, only.values=TRUE)$values 
+            lambda = res$optimalpha
+
+
 			gdf = p + (1-lambda)*p*(p-1)/2
-		}else{
-			sample_covariance_matrix <- cov(t(X))
-       		sample_variances <- apply(X, 1, var)
-			sigma_hat <- (1 - lambda) * sample_covariance_matrix + diag(lambda * sample_variances, ncol(sample_covariance_matrix))
-			ev_return = eigen(sigma_hat, symmetric=TRUE, only.values=TRUE)$values
+		# }else{
+		# 	sample_covariance_matrix <- cov(t(X))
+  #      		sample_variances <- apply(X, 1, var)
+		# 	sigma_hat <- (1 - lambda) * sample_covariance_matrix + diag(lambda * sample_variances, ncol(sample_covariance_matrix))
+		# 	ev_return = eigen(sigma_hat, symmetric=TRUE, only.values=TRUE)$values
 
-			gdf = p + (1-lambda)*p*(p-1)/2 
+		# 	gdf = p + (1-lambda)*p*(p-1)/2 
 
-			# return new value of lambda
-			res = shrinkcovmat.unequal( X )
-			lambda = res$lambdahat
-		}
+		# 	# return new value of lambda
+		# 	res = shrinkcovmat.unequal( X )
+		# 	lambda = res$lambdahat
+		# }
 	}else{
 		# Compute log det from singular values of residual matrix
 		# Much faster for large data
