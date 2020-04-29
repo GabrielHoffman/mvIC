@@ -35,6 +35,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
 	nparamsMethod = match.arg(nparamsMethod)
+	baseFormula = as.formula( baseFormula )
 
 	if( ! is.data.frame(data) ){
 		data = as.data.frame(data, stringsAsFactors=FALSE)
@@ -195,6 +196,7 @@ mvIC_fit = function( exprObj, formula, data, criterion = c("AIC", "BIC", "sum AI
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
 	nparamsMethod = match.arg(nparamsMethod)
+	formula = as.formula(formula)
 
 	if( ! is.data.frame(data) ){
 		data = as.data.frame(data, stringsAsFactors=FALSE)
