@@ -105,6 +105,7 @@ library(data.table)
 library(CVTuningCov)
 library(Matrix)
 library(gridExtra)
+library(TAS)
 
 set.seed(1)
 
@@ -124,12 +125,12 @@ ngenes_array = c(10, 20, 40, 60, 80, 100, 200, 500)
 rho_array = seq(0, .98, length.out=10)
 
 
-n_reps = 10
-n = 400 # number of samples
-m_active_array = 2
+n_reps = 30
+n = 100 # number of samples
+m_active_array = 1:2
 signalFraction = .7
-ngenes_array = 300
-rho_array = seq(0, .25, length.out=5)
+ngenes_array = c(1,2,3,5,10, 20)
+rho_array = seq(0, .25, length.out=10)
 
 
 resRecovery = lapply(1:n_reps, function(k){
@@ -300,8 +301,9 @@ res = lapply(seq(0, .99, length.out=20), function(rho){
   Sigma = matrix(rho, p, p)
   diag(Sigma) = 1
   Noise = rmvnorm(n, sig=Sigma)
-  fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
-  Y = eta + Noise*fctr
+  # fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
+  # Y = eta + Noise*fctr
+  Y = Noise*fctr
   residMatrix1 = t(residuals(lm(scale(Y) ~ X_1, data=as.data.frame(X))))
   residMatrix2 = t(residuals(lm(scale(Y) ~ 1, data=as.data.frame(X))))
 
@@ -311,18 +313,19 @@ res = lapply(seq(0, .99, length.out=20), function(rho){
   a = gcShrink( residMatrix1, var=3, cor=1, plot=FALSE)
   b = gcShrink( residMatrix1, var=2, cor=1, plot=FALSE)
 
-  # data.frame(rho,
-  #           true = sum(log(eigen(Sigma, only.values=TRUE)$values)),
-  #           shrinkCovmat = sum(log(eigen(f1$Sigmahat, only.values=TRUE)$values)),
-  #           gcShrink = sum(log(eigen(a$sigmahat, only.values=TRUE)$values)))
-           
+  data.frame(rho,
+            true = sum(log(eigen(Sigma, only.values=TRUE)$values)),
+            shrinkCovmat = sum(log(eigen(f1$Sigmahat, only.values=TRUE)$values)),
+            gcShrink = sum(log(eigen(a$sigmahat, only.values=TRUE)$values)),
+            gcShrink_eq = sum(log(eigen(b$sigmahat, only.values=TRUE)$values)))
+        
 
-  data.frame( rho = rho, 
-              lambda1 = f1$lambdahat,
-              lambda2 = f2$lambdahat,
-              lambda_strimmer = attr(cov.shrink(t(residMatrix1), lambda.var=0, verbose=FALSE),"lambda"), 
-              alpha = a$optimalpha, 
-              alpha_equal = b$optimalpha   )
+  # data.frame( rho = rho, 
+  #             lambda1 = f1$lambdahat,
+  #             lambda2 = f2$lambdahat,
+  #             lambda_strimmer = attr(cov.shrink(t(residMatrix1), lambda.var=0, verbose=FALSE),"lambda"), 
+  #             alpha = a$optimalpha, 
+  #             alpha_equal = b$optimalpha   )
 })
 res = do.call(rbind, res)
 
