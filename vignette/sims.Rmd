@@ -175,7 +175,9 @@ resRecovery = lapply(1:n_reps, function(k){
             Y = eta + Noise*fctr
             # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
 
-            message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ')  
+            message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ') 
+
+            save(list=ls(), file="test.RDATA") 
 
             # Multivariate methods
             methods = c( "var_equal")
@@ -222,10 +224,9 @@ resRecovery = lapply(1:n_reps, function(k){
                           sigFrac = sigFrac,
                           m_active = m_active)
             })
-            resSum = do.call(rbind, resSum) 
-           
+            resSum = do.call(rbind, resSum)            
 
-              rbind(res, resSum)
+            rbind(res, resSum)
           })
           do.call(rbind, resRecovery)
         })
