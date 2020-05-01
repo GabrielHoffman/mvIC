@@ -337,6 +337,17 @@ ggplot(df, aes(rho, value, color=variable)) + geom_line() + theme_bw() + theme(a
 
 
 
+X <- t(scale(t(X), scale = F, center = T))
+target <- getTarget(X, var=3, cor=1)
+
+f = function(alpha, X, target){
+   logML(X, target, alpha)
+}
+
+optimize( logML, lower=0, upper=1, X=X, target=target, alpha)
+
+
+
 
 mvIC:::mvIC_from_residuals( residMatrix1, 3, logDetMethod="var_unequal")
 mvIC:::mvIC_from_residuals( residMatrix2, 2, logDetMethod="var_unequal"  )

@@ -425,11 +425,21 @@ mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "sum 
 
 		if( shrink.method == "EB"){
 
-			suppressWarnings({
-            res = gcShrink( residMatrix, var=3, cor=1, plot=FALSE)
-            })
-            lambda = res$optimalpha
-            logLik = min(res$logmarg)
+			# suppressWarnings({
+   #          res = gcShrink( residMatrix, var=3, cor=1, plot=FALSE)
+   #          })
+   #          lambda = res$optimalpha
+   #          logLik = max(res$logmarg)
+
+			X <- t(scale(t(residMatrix), scale = FALSE, center = TRUE))
+			target <- getTarget(X, var=3, cor=1)
+
+			f = function(alpha, X, target){
+			   logML(X, target, alpha)
+			}
+			opt = optimize( f, lower=0, upper=1, X=X, target=target, maximum=TRUE)
+			lambda = opt$maximum
+			logLik = opt$objective
 
             dataTerm = -2*logLik            
 			gdf_cov = p + (1-lambda)*p*(p-1)/2
