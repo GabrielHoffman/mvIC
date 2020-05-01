@@ -43,7 +43,7 @@ adjusted_eigen_values = function( X, shrink.method=c("var_equal", "var_unequal",
 		# with __equal_ variances, 
 		 # sigmahat <- (1 - lambda_hat) * sample_covariance_matrix + diag(nu_hat * lambda_hat, p)
 		res = shrinkcovmat.equal_lambda( X, centered=TRUE )
-		lambda = res$lambda_hat
+		lambda = max(min(res$lambda_hat, 1), 0)
 		nu_hat = res$nu_hat
 
 		A = X / sqrt(n_samples-1)
@@ -85,10 +85,9 @@ adjusted_eigen_values = function( X, shrink.method=c("var_equal", "var_unequal",
 			sigma_hat = res$Sigmahat
 			ev_return = eigen(res$Sigmahat, symmetric=TRUE, only.values=TRUE)$values
 
-            res = gcShrink( X, var=2, cor=1, plot=FALSE)
-            ev_return = eigen(res$sigmahat, symmetric=TRUE, only.values=TRUE)$values 
-            lambda = res$optimalpha
-
+            # res = gcShrink( X, var=2, cor=1, plot=FALSE)
+            # ev_return = eigen(res$sigmahat, symmetric=TRUE, only.values=TRUE)$values 
+            # lambda = res$optimalpha
 
 			gdf = p + (1-lambda)*p*(p-1)/2
 		# }else{
