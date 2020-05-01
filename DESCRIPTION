@@ -1,8 +1,8 @@
 Package: mvIC
 Type: Package
 Title: Multivariate Information Criteria to identify important predictors in high dimensional multivariate regression
-Version: 1.2.0
-Date: 2020-04-28
+Version: 1.3.0
+Date: 2020-05-1
 Author: Gabriel E. Hoffman
 Maintainer: Gabriel E. Hoffman <gabriel.hoffman@mssm.edu>
 Description: Identifying important predictor variables in datasets with thousands of features (i.e. genes) but many fewer samples is a common challange in genomics. mvIC extends AIC and BIC to the context of multivariate regression.  Regression models are fit across each response variable and the information criterion explicitly considers correlation between reponses. mvIC is appiciable to linear and linear mixed models.  Forward stepwise regression with the mvIC criterion enables automated variable selection for high dimensional genomics datasets.
@@ -23,5 +23,6 @@ Imports:
     variancePartition,
     limma,
     ShrinkCovMat,
+    CholWishart,
     stats
 RoxygenNote: 7.1.0
