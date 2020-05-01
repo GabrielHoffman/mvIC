@@ -133,7 +133,7 @@ ngenes_array = c(4, 5,10, 20, 25, 30, 40, 50)
 rho_array = seq(.01, .25, length.out=10)
 
 
-resRecovery = lapply(1:n_reps, function(k){
+resRecovery = lapply(12:n_reps, function(k){
     
   set.seed(k)
 
