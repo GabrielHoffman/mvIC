@@ -162,6 +162,18 @@ ngenes_array = c(5, 10, 25, 100, 200, 500)
 rho_array = seq(0, .98, length.out=6)
 
 
+
+n_reps = 10   
+n = 50 # number of samples
+m_total = 10 # total number of variables
+n_clusters = 5
+
+m_active_array = 1
+signalFraction = .4
+ngenes_array = c(5, 100)
+rho_array = seq(0, .98, length.out=4)
+
+
 resSearch = lapply(1:n_reps, function(k){
     
   set.seed(k)
