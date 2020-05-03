@@ -244,6 +244,7 @@ df$sd = with(df, sqrt(recoveryRate*(1-recoveryRate)/n_reps))
 df$up = with(df, recoveryRate + sd)
 df$down = with(df, recoveryRate - sd)
 
+df = df[grep("var_", method, invert=TRUE),]
 # cols = c("red", "orange", "dodgerblue", "blue",  "navy", "grey", "green", "black")
 
 figList = lapply(unique(df$sigFrac), function(v){
