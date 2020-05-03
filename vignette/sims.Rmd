@@ -153,7 +153,7 @@ library(TAS)
 
 set.seed(1)
 
-n_reps = 10   
+n_reps = 200   
 n = 50 # number of samples
 m_total = 8 # total number of variables
 # n_clusters = 5
@@ -161,7 +161,7 @@ m_total = 8 # total number of variables
 m_active_array = 1
 signalFraction = .5 #seq(.2, .8, by=.2)
 ngenes_array = c(10, 100)
-rho_array = seq(0, .98, length.out=8)
+rho_array = seq(0, .98, length.out=10)
 
 
 resSearch = lapply(1:n_reps, function(k){
