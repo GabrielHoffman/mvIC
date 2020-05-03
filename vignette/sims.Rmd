@@ -112,7 +112,7 @@ library(TAS)
 
 set.seed(1)
 
-n_reps = 50   
+n_reps = 10   
 n = 50 # number of samples
 # p = 10 # number of genes
 # m_active = 2 # number of variables affecting phenotype
