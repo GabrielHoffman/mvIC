@@ -67,7 +67,7 @@ eb_cov_est = function(X){
 	X <- t(scale(t(X), center=TRUE, scale=FALSE))  # mean 0
 
 	if( n > p){
-		# O(p^2)
+		# O(np^2)
 		S = crossprod(t(X)) / (n-1)
 
 		f = function(alpha, n, p, X, delta_diag, S){
@@ -75,7 +75,7 @@ eb_cov_est = function(X){
 		}
 		opt = optimize( f, lower=0, upper=1, n=n, p=p, X=X, delta_diag=delta_diag, S=S, maximum=TRUE)		
 	}else{
-		# O(n^2)
+		# O(n^2p)
 		# Hannart and Naveau equation 21
 		# cP = crossprod(X,solve(diag(delta_diag), X))
 		cP = crossprod(sweep(X, 1, sqrt(delta_diag), FUN="/"))
