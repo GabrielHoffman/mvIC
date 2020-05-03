@@ -121,8 +121,8 @@ n_clusters = 5
 
 m_active_array = c(1, 2)
 signalFraction = seq(.4, .8, by=.2)
-ngenes_array = c(10, 20, 40, 60, 80, 100)#, 200, 500)
-rho_array = seq(0, .98, length.out=9)
+ngenes_array = c(10, 20, 40, 60, 80, 100, 200, 500)
+rho_array = seq(0, .98, length.out=15)
 
 
 # n_reps = 10
@@ -180,9 +180,9 @@ resRecovery = lapply(1:n_reps, function(k){
             save(list=ls(), file="test.RDATA") 
 
             # Multivariate methods
-            methods = c( "var_equal", "EB", "none")
-            if( p < 200){
-              # methods = c(methods, "var_unequal") 
+            methods = c(  "EB" ) #"var_equal",
+            if( n > p){
+               methods = c(methods, "none") 
             }
             criteria = c("AIC", "BIC") 
             res = lapply( methods, function(method){
