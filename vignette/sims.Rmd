@@ -121,7 +121,7 @@ n_clusters = 5
 
 m_active_array = 1#c(1, 2)
 signalFraction = .6#seq(.4, .8, by=.2)
-ngenes_array = c(10)#, 20, 40, 60, 80, 100, 200, 500)
+ngenes_array = c(100)#, 20, 40, 60, 80, 100, 200, 500)
 rho_array = seq(0, .98, length.out=3)
 
 
