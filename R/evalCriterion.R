@@ -394,7 +394,7 @@ mvIC = function( fitList, criterion =c("AIC", "BIC", "sum AIC", "sum BIC"), shri
 	# get number of parameters for multiple forms of fitList
 	m = nparam( fitList, nparamsMethod=nparamsMethod )
 
-	mvIC_from_residuals( residMatrix, m, criterion,...)
+	mvIC_from_residuals( residMatrix, m, criterion=criterion, shrink.method=shrink.method,...)
 }
 
 

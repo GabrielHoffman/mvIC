@@ -77,7 +77,21 @@ Simulation, show probability of selection true model increases with number of fe
 
 Compare with "standard" Multivariate AIC, AICc, BIC for n > p
 
-with high signam, why do other perform better?  Is that an issue with the randomization of the simulations???fgte
+with high signam, why do other perform better?  Is that an issue with the randomization of the simulations???
+
+add AICc from see Yanagihara, et al. 2015
+    # doi:10.1214/15-EJS1022
+
+How did the do simulations?
+exhaustive search?    
+Do best subset selection for combn(10, k) 1:5
+  evaluate average rank of best model
+  and probability that true model is best scoring?
+
+
+
+
+
 
 devtools::reload("/Users/gabrielhoffman/workspace/repos/mvIC")
 
@@ -96,6 +110,155 @@ trueSet = sort(colnames(X)[1:m_active])
 bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X))
 
 bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), criterion="sum BIC")
+```
+
+```{r best.subset}
+
+bestsubset_search = function(Y, data, variables, maxk=5){
+
+  res = lapply( 1:maxk, function(k){
+    idx = combn(length(variables), k)
+
+    formArray = apply(idx, 2, function(i) paste('Y ~', paste(variables[i], collapse=' + ')))
+
+    res = lapply(formArray, function(form){
+      fit = lm(as.formula(form), data=data)
+
+      res = lapply(c("EB", "var_unequal", "none"), function(method){
+        res = lapply(c("AIC", "BIC"), function(criterion){
+          score = mvIC(fit, shrink.method=method, criterion=criterion)
+          data.frame(k=k,form=form, method=method, criterion=criterion, score = score[1], stringsAsFactors=FALSE)
+        })
+        do.call(rbind, res)
+      })
+      do.call(rbind, res)
+    } )
+    res = do.call(rbind, res)
+  })
+  data.table(do.call(rbind, res))
+}
+
+
+library(poolr)
+library(mvIC)
+library(ggplot2)
+library(mvtnorm)
+library(data.table)
+library(CVTuningCov)
+library(Matrix)
+library(gridExtra)
+library(TAS)
+
+set.seed(1)
+
+n_reps = 100   
+n = 50 # number of samples
+m_total = 10 # total number of variables
+n_clusters = 5
+
+m_active_array = c(1,2)
+signalFraction = seq(.2, .8, by=.2)
+ngenes_array = c(5, 10, 25, 100, 200, 500)
+rho_array = seq(0, .98, length.out=6)
+
+
+resSearch = lapply(1:n_reps, function(k){
+    
+  set.seed(k)
+
+  resSearch = lapply(m_active_array, function(m_active){
+
+    # simulate variables
+    X = matrix(rnorm(m_total*n), n, m_total)
+    colnames(X) = paste0('X_', 1:m_total)
+    trueSet = c('1', sort(colnames(X)[1:m_active]))
+
+    resSearch = lapply(ngenes_array, function(p){
+
+        # simulate coefficient for each gene
+        beta = matrix(rnorm(p*m_active, 0, 10), m_active,p)
+        # beta[sample.int(length(beta), length(beta)*.5)] = 0 
+
+        eta = X[,1:m_active,drop=FALSE] %*% beta 
+
+        # changes correlation structure of noise. 
+        clustID = sample.int(n_clusters, p, prob = dexp(1:n_clusters, .5), replace=TRUE)
+
+        resSearch = lapply( rho_array, function(rho){
+
+          sigList = lapply(unique(clustID), function(id){
+            count = sum(clustID == id)                
+            Sigma = matrix(rho, count, count)
+            diag(Sigma) = 1
+            Sigma
+            })
+          Sigma = as.matrix(bdiag(sigList))
+          # Sigma = matrix(rho, p, p)
+          diag(Sigma) = 1
+          # Sigma = AR1(p, rho)
+          Noise = rmvnorm(n, sig=Sigma)
+
+          resSearch = lapply(signalFraction, function(sigFrac){
+
+            fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
+            Y = eta + Noise*fctr
+            # cor(eta[1,], eta[1,] + Noise[1,]*fctr)^2
+
+            message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ') 
+ 
+            modelSearch = bestsubset_search(Y, as.data.frame(X), colnames(X), maxk=3)
+
+            trueModel = paste('Y ~', paste(colnames(X)[1:m_active], collapse=' + ')) 
+
+            # get best model
+            # modelSearch[,form[which.min(score)],by=c('method', 'criterion')]
+
+            # get best model
+            df = modelSearch[,data.frame(rank = order(score), isTrue = form==trueModel) ,by=c('method', 'criterion')]
+
+            # rank of best model
+            res = df[isTrue==TRUE,1:3]
+            res$k = k 
+            res$m_active = m_active
+            res$p = p
+            res$rho = rho
+            res$sigFrac = sigFrac
+            res
+          })
+          do.call(rbind, resSearch)
+        })
+        do.call(rbind, resSearch)
+      })
+      do.call(rbind, resSearch)
+    })
+    do.call(rbind, resSearch)
+})
+resSearch = do.call(rbind, resSearch)
+resSearch = data.table(resSearch)
+
+```
+
+```{r plot.model.search}
+
+df = data.frame(resSearch[, data.frame(rank=mean(rank), sd=sd(rank)),by=c('method', 'criterion', 'm_active', 'p', 'rho', 'sigFrac')])
+
+maxRank = max(df$rank)
+
+
+figList = lapply(unique(df$sigFrac), function(v){
+  ggplot( subset(df, sigFrac == v), aes(rho, rank, color=paste(method, criterion), fill=paste(method, criterion))) + geom_point() + geom_line() + geom_ribbon(aes(rho, ymin=pmax(rank-sd,0), ymax=pmin(rank+sd, maxRank)), alpha=.2, linetype=0) + facet_wrap( ~ m_active + p, nrow=1) + scale_color_discrete("Method") + scale_fill_discrete("Method") + theme_bw() + theme(aspect.ratio=1) + ggtitle(v) + scale_y_log10()
+})
+
+do.call("grid.arrange", c(figList, ncol=1))
+
+
+
+
+```
+
+
+```{r, cache=FALSE}
+knit_exit()
 ```
 
 
@@ -177,7 +340,7 @@ resRecovery = lapply(1:n_reps, function(k){
 
             message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ') 
 
-            save(list=ls(), file="test.RDATA") 
+            # save(list=ls(), file="test.RDATA") 
 
             # Multivariate methods
             methods = c(  "EB" ) #"var_equal",
@@ -266,10 +429,10 @@ do.call("grid.arrange", c(figList, ncol=1))
 mvIC_fit( t(Y), ~ 1, X, criterion="sum BIC")
 mvIC_fit( t(Y), ~ X_1, X, criterion="sum BIC")
 
-method = "var_unequal"
-# method="var_equal"
-res1 = mvIC_fit( t(scale(Y)), ~ X_1, X, shrink.method=method)
-res2 = mvIC_fit( t(scale(Y)), ~ 1, X, , shrink.method=method)
+method = "none"
+# method="EB"
+res1 = mvIC_fit( t(scale(Y)), ~ X_1, X, shrink.method=method, criterion="AIC")
+res2 = mvIC_fit( t(scale(Y)), ~ 1, X, , shrink.method=method, criterion="AIC")
 res1-res2
 res1@params
 res2@params
@@ -369,7 +532,7 @@ v = sapply( 1:100, function(k){
 })
 plot(v)
 
-
+t(Y), ~1, X, colnames(X)
 
 
 

@@ -115,7 +115,7 @@ adjusted_eigen_values = function( X, shrink.method=c("var_equal", "var_unequal",
 			warning(paste("Smallest eigen-value is", format(min(ev), scientific=TRUE, digits=2), "so log determinant is very unstable.\nConsider using shrink.method 'var_equal' or 'var_unequal'"))
 		}
 
-		ev_return = ev
+		ev_return = ev[ev > 1e-10]
 		lambda = 0
 		gdf = p*(p+1)/2
 	}
