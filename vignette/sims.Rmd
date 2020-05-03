@@ -158,20 +158,8 @@ n_clusters = 5
 
 m_active_array = c(1,2)
 signalFraction = seq(.2, .8, by=.2)
-ngenes_array = c(5, 10, 25, 100, 200, 500)
-rho_array = seq(0, .98, length.out=6)
-
-
-
-n_reps = 10   
-n = 50 # number of samples
-m_total = 10 # total number of variables
-n_clusters = 5
-
-m_active_array = 1
-signalFraction = .4
-ngenes_array = c(5, 100)
-rho_array = seq(0, .98, length.out=4)
+ngenes_array = c(5, 10, 25, 100, 200)
+rho_array = seq(0, .98, length.out=5)
 
 
 resSearch = lapply(1:n_reps, function(k){
@@ -218,7 +206,7 @@ resSearch = lapply(1:n_reps, function(k){
 
             message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ') 
  
-            modelSearch = bestsubset_search(Y, as.data.frame(X), colnames(X), maxk=3)
+            modelSearch = bestsubset_search(Y, as.data.frame(X), colnames(X), maxk=4)
 
             trueModel = paste('Y ~', paste(colnames(X)[1:m_active], collapse=' + ')) 
 
