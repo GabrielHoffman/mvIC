@@ -92,34 +92,6 @@ devtools::reload("/Users/gabrielhoffman/workspace/repos/mvIC")
 
 
 
-```{r}
-bestsubset_search = function(Y, data, variables, maxk=5){
-
-  res = lapply( 1:maxk, function(k){
-    idx = combn(length(variables), k)
-
-    formArray = apply(idx, 2, function(i) paste('Y ~', paste(variables[i], collapse=' + ')))
-
-    res = lapply(formArray, function(form){
-      fit = lm(as.formula(form), data=data)
-
-      res = lapply(c("EB", "none"), function(method){
-        res = lapply(c("AIC", "BIC", "sum AIC", "sum BIC"), function(criterion){
-          if( length(grep("sum", criterion)) > 0 & method != "none" ) return(NULL)
-
-          score = mvIC(fit, shrink.method=method, criterion=criterion)
-          data.frame(k=k,form=form, method=method, criterion=criterion, score = score[1], stringsAsFactors=FALSE)
-        })
-        do.call(rbind, res)
-      })
-      do.call(rbind, res)
-    } )
-    res = do.call(rbind, res)
-  })
-  data.table(do.call(rbind, res))
-}
-```
-
 
 ```{r basic}
 n = 50
@@ -155,7 +127,7 @@ Noise = rmvnorm(n, sig=Sigma)
 fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
 Y = eta + Noise*fctr  
 
-modelSearch = bestsubset_search(Y, as.data.frame(X), colnames(X), maxk=3)
+modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=3)
 
 df = modelSearch[,data.frame(rank = rank(score), isTrue = form==trueModel) ,by=c('method', 'criterion')]
 df[isTrue==TRUE,1:3]
@@ -286,7 +258,7 @@ resSearch = lapply(1:n_reps, function(k){
 
             message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ') 
  
-            modelSearch = bestsubset_search(Y, as.data.frame(X), colnames(X), maxk=3)
+            modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=3)
 
             trueModel = paste('Y ~', paste(colnames(X)[1:m_active], collapse=' + ')) 
 

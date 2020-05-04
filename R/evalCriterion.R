@@ -427,7 +427,8 @@ mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "sum 
 
 			# responses are *rows*
 			# res = eb_cov_est( t(residMatrix) )
-			res = eb_cov_est2( t(residMatrix) )
+			# res = eb_cov_est2( t(residMatrix) )
+			res = estimateMVN_EB( t(residMatrix) )
 			lambda = res$alpha
 
             dataTerm = -2*res$logLik            

@@ -1,3 +1,8 @@
+# v1.4.0  May 1, 2020
+	o Add bestSubsetSearch()
+	o Add estimateMVN_EB for Empirical Bayes estimation from Multivariate Normal Inverse Wishart model (MNIWEB)
+
+
 # v1.3.0  May 1, 2020
 	o add rough code for empirical Bayes covariance estimation 
 

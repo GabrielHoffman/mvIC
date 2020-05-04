@@ -107,8 +107,6 @@ ll = function(delta, Phi, S, n){
 }
 
 
-
-
 eb_cov_est2 = function(X, MAP=TRUE){
 
 	X = t(scale(X, scale=FALSE))	
@@ -134,6 +132,113 @@ eb_cov_est2 = function(X, MAP=TRUE){
 			alpha = alpha, 
 			Sigmahat = Sigmahat)
 }
+
+
+logh = function(nu, Phi_local, d){
+  nu/2 * determinant(Phi_local)$modulus[1] - (d*nu/2)*log(2) - CholWishart::lmvgamma(nu/2,d) 
+}
+
+
+#' @importFrom CholWishart lmvgamma
+ll_mvn_iw_eb_large_n = function(nu, phi, S, n){
+  p = nrow(S)
+  # -n*p/2*log(2*pi) + logh(nu, diag(phi*(nu - p - 1)), p) - logh(nu + n, diag(phi*(nu - p - 1)) + S, p)
+
+  s = (nu - p - 1)
+  term1 = -n*p/2*log(2*pi)
+  term2 = nu/2 * sum(log(phi*s))
+  term2a = -(p*nu/2)*log(2) - CholWishart::lmvgamma(nu/2,p) 
+
+  term3 = (nu+n)/2 * determinant(diag(phi*s) + S)$modulus[1] 
+  term3a = - (p*(nu+n)/2)*log(2) - CholWishart::lmvgamma((nu+n)/2,p) 
+
+  term1 + (term2 + term2a) - (term3 + term3a)
+}
+
+
+#' @importFrom CholWishart lmvgamma
+ll_mvn_iw_eb_large_p = function(nu, phi, a, n){
+  p = nrow(S)
+  # -n*p/2*log(2*pi) + logh(nu, diag(phi*(nu - p - 1)), p) - logh(nu + n, diag(phi*(nu - p - 1)) + S, p)
+
+  s = (nu - p - 1)
+  term1 = -n*p/2*log(2*pi)
+  term2 = nu/2 * sum(log(phi*s))
+  term2a = -(p*nu/2)*log(2) - CholWishart::lmvgamma(nu/2,p) 
+
+  term3 = (nu+n)/2 * (sum(log(phi)) + sum(log(s + a )) )
+  # term3 = (nu+n)/2 * determinant(diag(phi*s) + S)$modulus[1] 
+  term3a = - (p*(nu+n)/2)*log(2) - CholWishart::lmvgamma((nu+n)/2,p) 
+
+  term1 + (term2 + term2a) - (term3 + term3a)
+
+}
+
+
+#' Fit Multivariate Normal Inverse Wishart Model using Empirical Bayes
+#'
+#' Fit Multivariate Normal Inverse Wishart Model using Empirical Bayes
+#'
+#' @param X response matrix with responses on columns and samples on rows
+#' @param MAP compute Maximum a posteriori estimate of covariance between responses
+estimateMVN_EB = function(X, MAP=FALSE){
+
+	X = t(scale(X, scale=FALSE))	
+
+	n = ncol(X)
+	p = nrow(X)
+	phi = apply(X, 1, var)
+
+	if( n > 1){
+		# O(np^2)
+		S = tcrossprod(X) # cov(t(X)) * (n-1)
+
+		opt = optimize( ll_mvn_iw_eb_large_n, lower=p, upper=1e5, phi=phi, S=S, n=n, maximum=TRUE) 
+	}else{
+		# O(n^2p)
+		# Hannart and Naveau equation 21
+		# cP = crossprod(X,solve(diag(phi), X))
+		cP = crossprod(sweep(X, 1, sqrt(phi), FUN="/"))
+		a = eigen(cP, only.values=TRUE, symmetric=TRUE)$values
+		a = c(a, rep(0, max(n,p) - length(a)))
+
+		opt = optimize( ll_mvn_iw_eb_large_p, lower=p, upper=1e5, phi=phi, a=a, n=n, maximum=TRUE) 
+	}
+
+	nu = opt$maximum
+
+	alpha = (nu-p-1) / (n+nu-p-1)
+
+	# compute MAP estimate
+	if( MAP ){
+		if( ! exists("S") ){
+			S = tcrossprod(X)
+		}
+		Sigmahat = (1-alpha) * S / (n-1) + alpha * diag(phi)
+	}else{
+		Sigmahat = NULL
+	}
+
+	list(	logLik 		= opt$objective[1],
+			alpha 		= alpha, 
+			Sigmahat 	= Sigmahat)
+}
+
+
+# mvn_iw_eb(t(mvIC:::getResids(fit)), MAP=FALSE)
+
+
+# mvIC:::eb_cov_est2(t(mvIC:::getResids(fit)), MAP=FALSE)
+
+# eb_cov_est2(t(mvIC:::getResids(fit)), MAP=FALSE)
+
+
+
+
+
+
+
+
 
 
 
