@@ -84,10 +84,10 @@ eb_cov_est = function(X){
 		a = eigen(cP/(n-1), only.values=TRUE, symmetric=TRUE)$values
 		a = c(a, rep(0, max(n,p) - length(a)))
 
-		f = function(alpha, n, p, X, delta_diag, S, a){
+		g = function(alpha, n, p, X, delta_diag, S, a){
 		   loglikelihood_large_p(alpha, n, p, X, delta_diag, a)
 		}
-		opt = optimize( f, lower=0, upper=1, n=n, p=p, X=X, delta_diag=delta_diag, a=a, maximum=TRUE)
+		opt = optimize( g, lower=0, upper=1, n=n, p=p, X=X, delta_diag=delta_diag, a=a, maximum=TRUE)
 	}
 	
 	with(opt, list(logLik = objective, alpha = maximum))
@@ -158,7 +158,8 @@ ll_mvn_iw_eb_large_n = function(nu, phi, S, n){
 
 #' @importFrom CholWishart lmvgamma
 ll_mvn_iw_eb_large_p = function(nu, phi, a, n){
-  p = nrow(S)
+  # p = nrow(S)
+  length(phi)
   # -n*p/2*log(2*pi) + logh(nu, diag(phi*(nu - p - 1)), p) - logh(nu + n, diag(phi*(nu - p - 1)) + S, p)
 
   s = (nu - p - 1)
@@ -239,39 +240,34 @@ estimateMVN_EB = function(X, MAP=FALSE){
 
 
 
+# eb_cov_est3 = function(X, MAP=TRUE){
 
+# 	X = t(scale(X, scale=FALSE))	
 
+# 	n = ncol(X)
+# 	p = nrow(X)
 
-eb_cov_est3 = function(X, MAP=TRUE){
+# 	S = tcrossprod(X) / (n-1)
+# 	f = function(alpha){
+# 		Sigma = (1-alpha) * S + alpha * diag(diag(S))
+# 		nu = n*alpha/(1-alpha) + p + 1
+# 		mniw::dMT(t(X), nu=nu, SigmaC = Sigma, log=TRUE)
+# 	}
 
-	library(mniw)
+# 	opt = optimize(f, lower=1e-4, upper=1-1e-4, maximum=TRUE)
+# 	alpha = opt$maximum
 
-	X = t(scale(X, scale=FALSE))	
+# 	# compute MAP estimate
+# 	if( MAP ){
+# 		Sigmahat = (1-alpha) * S + alpha * diag(diag(S))
+# 	}else{
+# 		Sigmahat = NULL
+# 	}
 
-	n = ncol(X)
-	p = nrow(X)
-
-	S = tcrossprod(X) / (n-1)
-	f = function(alpha){
-		Sigma = (1-alpha) * S + alpha * diag(diag(S))
-		nu = n*alpha/(1-alpha) + p + 1
-		dMT(t(X), nu=nu, SigmaC = Sigma, log=TRUE)
-	}
-
-	opt = optimize(f, lower=1e-4, upper=1-1e-4, maximum=TRUE)
-	alpha = opt$maximum
-
-	# compute MAP estimate
-	if( MAP ){
-		Sigmahat = (1-alpha) * S + alpha * diag(diag(S))
-	}else{
-		Sigmahat = NULL
-	}
-
-	list(logLik = opt$objective,
-			alpha = alpha, 
-			Sigmahat = Sigmahat)
-}
+# 	list(logLik = opt$objective,
+# 			alpha = alpha, 
+# 			Sigmahat = Sigmahat)
+# }
 
 # delta_diag = diag(D)
 # ( n*alpha/(1-alpha) + p + 1) * sum(log(alpha/(1-alpha) * delta_diag))

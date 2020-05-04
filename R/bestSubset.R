@@ -5,13 +5,14 @@
 #'
 #' Evaluate information criteria for best subset selection
 #'
-#' @param exprObj matrix of expression data (g genes x n samples), or ExpressionSet, or EList returned by voom() from the limma package
+#' @param Y response matrix with responses ad columns and samples as rows
 #' @param data data.frame with columns corresponding to formula
 #' @param variables array of variable names to be considered in the regression.  Random effects are not allowed
 #' @param maxk evaluate all combinations of variables up to size maxk
 #'
 #' @importFrom dplyr as_tibble
 #' @importFrom utils combn
+#' @importFrom stats lm
 #' @export
 bestSubsetSearch = function(Y, data, variables, maxk=5){
 

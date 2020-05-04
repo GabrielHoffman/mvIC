@@ -7,13 +7,13 @@
 bestSubsetSearch(Y, data, variables, maxk = 5)
 }
 \arguments{
+\item{Y}{response matrix with responses ad columns and samples as rows}
+
 \item{data}{data.frame with columns corresponding to formula}
 
 \item{variables}{array of variable names to be considered in the regression.  Random effects are not allowed}
 
 \item{maxk}{evaluate all combinations of variables up to size maxk}
-
-\item{exprObj}{matrix of expression data (g genes x n samples), or ExpressionSet, or EList returned by voom() from the limma package}
 }
 \description{
 Evaluate information criteria for best subset selection

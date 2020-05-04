@@ -260,6 +260,7 @@ resSearch = lapply(1:n_reps, function(k){
             message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ') 
  
             modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=3)
+            modelSearch = data.table(modelSearch)
 
             trueModel = paste('Y ~', paste(colnames(X)[1:m_active], collapse=' + ')) 
 
