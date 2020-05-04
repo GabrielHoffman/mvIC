@@ -9,7 +9,7 @@ bestSubsetSearch(Y, data, variables, maxk = 5)
 \arguments{
 \item{data}{data.frame with columns corresponding to formula}
 
-\item{variables}{array of variable names to be considered in the regression.  If variable should be considered as random effect, use '(1|A)'.}
+\item{variables}{array of variable names to be considered in the regression.  Random effects are not allowed}
 
 \item{maxk}{evaluate all combinations of variables up to size maxk}
 

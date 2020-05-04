@@ -30,7 +30,7 @@
 #' @importFrom stats as.formula
 #' @importFrom dplyr as_tibble
 #' @export
-mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion = c("AIC", "BIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "EB", "none"), nparamsMethod = c("edf", "countLevels", "lme4"), deltaCutoff = 5, verbose=TRUE,...  ){
+mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion = c("AIC", "BIC", "AICC", "CAIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "EB", "none"), nparamsMethod = c("edf", "countLevels", "lme4"), deltaCutoff = 5, verbose=TRUE,...  ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -191,7 +191,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 #' @import variancePartition 
 #'
 #' @export
-mvIC_fit = function( exprObj, formula, data, criterion = c("AIC", "BIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "EB", "none"), nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE, ... ){
+mvIC_fit = function( exprObj, formula, data, criterion = c("AIC", "BIC", "AICC", "CAIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "EB", "none"), nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE, ... ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -382,7 +382,7 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 #' 
 #' @importFrom methods is
 #' @export
-mvIC = function( fitList, criterion =c("AIC", "BIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "EB", "none"), nparamsMethod = c("edf", "countLevels", "lme4"), ...){
+mvIC = function( fitList, criterion =c("AIC", "BIC", "AICC", "CAIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "EB", "none"), nparamsMethod = c("edf", "countLevels", "lme4"), ...){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -410,7 +410,7 @@ mvIC = function( fitList, criterion =c("AIC", "BIC", "sum AIC", "sum BIC"), shri
 #' @param ... other arguments passed to logDet
 #' 
 #' @importFrom methods new
-mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "EB", "none"), ... ){
+mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "AICC", "CAIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "EB", "none"), ... ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -418,7 +418,12 @@ mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "sum 
 	n = ncol(residMatrix) # number of samples
 	p = nrow(residMatrix) # number of response variables
 
-	if( criterion %in% c("AIC", "BIC") ){
+	if( criterion %in% c("AIC", "BIC", "AICC", "CAIC") ){
+
+		if( criterion %in% c("AICC", "CAIC") & n < p){
+			stop(paste("Criterion", criterion, "cannot be evaluated when n < p"))
+		}
+		
 		# compute log determinant explicitly
 		# slower and not defined for low rank matrices
 		# dataTerm = n * determinant(crossprod(residMatrix), log=TRUE)$modulus[1]
@@ -448,7 +453,9 @@ mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "sum 
 		# doi:10.1214/15-EJS1022
 		penalty = switch( criterion, 
 						"AIC" 	= 2 * (p*(m-1) + gdf_cov),
-						"BIC" 	= log(n) * (p*(m-1) + gdf_cov))
+						"BIC" 	= log(n) * (p*(m-1) + gdf_cov),
+						"AICC"	= 2 * n*(p*(m-1) + gdf_cov) / (n-(m-1) - p - 1),
+						"CAIC"	= (1+log(n)) * (p*(m-1) + gdf_cov))
 
 		# retrun data term plus penalty
 		res = dataTerm + penalty

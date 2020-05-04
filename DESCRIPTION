@@ -23,6 +23,7 @@ Imports:
     variancePartition,
     limma,
     ShrinkCovMat,
+    dplyr,
     CholWishart,
     stats
 RoxygenNote: 7.1.0
