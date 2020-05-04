@@ -425,27 +425,13 @@ mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "sum 
 
 		if( shrink.method == "EB"){
 
-			# suppressWarnings({
-   #          res = gcShrink( residMatrix, var=3, cor=1, plot=FALSE)
-   #          })
-   #          lambda = res$optimalpha
-   #          logLik = max(res$logmarg)
-
-			# X <- t(scale(t(residMatrix), scale = FALSE, center = TRUE))
-			# target <- getTarget(X, var=3, cor=1)
-
-			# f = function(alpha, X, target){
-			#    logML(X, target, alpha)
-			# }
-			# opt = optimize( f, lower=0, upper=1, X=X, target=target, maximum=TRUE)
-			# lambda = opt$maximum
-			# logLik = opt$objective
-
-			res = eb_cov_est( residMatrix )
+			# responses are *rows*
+			# res = eb_cov_est( t(residMatrix) )
+			res = eb_cov_est2( t(residMatrix) )
 			lambda = res$alpha
 
             dataTerm = -2*res$logLik            
-			gdf_cov = p + (1-lambda)*p*(p-1)/2
+			gdf_cov = p + 1#(1-lambda)*p*(p-1)/2
 
 		}else{
 			# Evaluate logDet based on shrink.method

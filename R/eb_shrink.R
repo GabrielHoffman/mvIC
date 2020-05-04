@@ -20,7 +20,7 @@ loglikelihood_orig = function(alpha, n, p, X, delta_diag){
 	
 	term3 = 2*(lmvgamma((n/(1-alpha) + p + 1)/2, p) - lmvgamma((n*alpha/(1-alpha) + p + 1)/2, p))
 
-	term1 + term2 + term3 - ((n * p) / 2) * log(n * pi)
+	term1 + term2 + term3 - ((n * p) / 2) * log(2 * pi)
 }
 
 
@@ -36,7 +36,7 @@ loglikelihood_large_n = function(alpha, n, p, X, delta_diag, S){
 
 	term3 = 2*(lmvgamma((n/(1-alpha) + p + 1)/2, p) - lmvgamma((n*alpha/(1-alpha) + p + 1)/2, p))
 
-	term1 + term2 + term3 - ((n * p) / 2) * log(n * pi)
+	term1 + term2 + term3 - ((n * p) / 2) * log(2 * pi)
 }
 
 
@@ -51,9 +51,11 @@ loglikelihood_large_p = function(alpha, n, p, X, delta_diag, a){
 
 	term3 = 2*(lmvgamma((n/(1-alpha) + p + 1)/2, p) - lmvgamma((n*alpha/(1-alpha) + p + 1)/2, p))
 
-	term1 + term2 + term3 - ((n * p) / 2) * log(n * pi)
+	term1 + term2 + term3 - ((n * p) / 2) * log(2 * pi)
 }
 
+
+# responses are *rows*
 #' @importFrom CholWishart lmvgamma
 #' @importFrom stats optimize
 eb_cov_est = function(X){
@@ -92,7 +94,115 @@ eb_cov_est = function(X){
 }
 
 
-# system.time(eb_cov_est(X))
+
+logh = function(delta, Phi_local){
+  d = nrow(Phi_local)
+  delta/2 * determinant(Phi_local)$modulus[1] - (d*delta/2)*log(2) - CholWishart::lmvgamma(delta/2,d) 
+}
+
+ll = function(delta, Phi, S, n){
+  d = p = nrow(Phi)
+  Phi = Phi*(delta - p - 1)
+  -n*d/2*log(2*pi) + logh(delta, Phi) - logh(delta + n, Phi + S)
+}
+
+
+
+
+eb_cov_est2 = function(X, MAP=TRUE){
+
+	X = t(scale(X, scale=FALSE))	
+
+	n = ncol(X)
+	p = nrow(X)
+	phi = apply(X, 1, var)
+	S = tcrossprod(X) # cov(t(X)) * (n-1)
+
+	opt = optimize( ll, lower=p, upper=1e5, Phi=diag(phi), S=S, n=n, maximum=TRUE) 
+	nu = opt$maximum
+
+	alpha = (nu-p-1) / (n+nu-p-1)
+
+	# compute MAP estimate
+	if( MAP ){
+		Sigmahat = (1-alpha) * S / (n-1) + alpha * diag(phi)
+	}else{
+		Sigmahat = NULL
+	}
+
+	list(logLik = opt$objective[1],
+			alpha = alpha, 
+			Sigmahat = Sigmahat)
+}
+
+
+
+eb_cov_est3 = function(X, MAP=TRUE){
+
+	library(mniw)
+
+	X = t(scale(X, scale=FALSE))	
+
+	n = ncol(X)
+	p = nrow(X)
+
+	S = tcrossprod(X) / (n-1)
+	f = function(alpha){
+		Sigma = (1-alpha) * S + alpha * diag(diag(S))
+		nu = n*alpha/(1-alpha) + p + 1
+		dMT(t(X), nu=nu, SigmaC = Sigma, log=TRUE)
+	}
+
+	opt = optimize(f, lower=1e-4, upper=1-1e-4, maximum=TRUE)
+	alpha = opt$maximum
+
+	# compute MAP estimate
+	if( MAP ){
+		Sigmahat = (1-alpha) * S + alpha * diag(diag(S))
+	}else{
+		Sigmahat = NULL
+	}
+
+	list(logLik = opt$objective,
+			alpha = alpha, 
+			Sigmahat = Sigmahat)
+}
+
+# delta_diag = diag(D)
+# ( n*alpha/(1-alpha) + p + 1) * sum(log(alpha/(1-alpha) * delta_diag))
+
+
+
+
+# # S = crossprod(t(X)) / (n-1)
+# # term2 = -1*(n/(1-alpha) + p + 1) * determinant( S + alpha/(1-alpha) * diag(delta_diag))$modulus[1]
+
+# # term3 = 2*(lmvgamma((n/(1-alpha) + p + 1)/2, p) - lmvgamma((n*alpha/(1-alpha) + p + 1)/2, p))
+
+# # term1 + term2 + term3 - ((n * p) / 2) * log(n * pi)
+
+
+# logh(delta, Phi*(delta - p - 1))
+
+
+# CholWishart::lmvgamma(nu/2,d)
+# CholWishart::lmvgamma((nu+n)/2,d)
+
+# CholWishart::lmvgamma((n*alpha/(1-alpha) + p + 1)/2, p)
+# CholWishart::lmvgamma((n/(1-alpha) + p + 1)/2, p) 
+
+
+
+# X = t(mvIC:::getResids(fit))
+# mvIC:::eb_cov_est( X )
+# eb_cov_est2( X )
+
+
+ 
+# x = seq(100, 1e5, length.out=1000)
+# y = sapply(x, function(delta) ll(delta, Phi, S, n))
+# plot(x,y)
+
 
 
 

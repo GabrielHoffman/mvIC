@@ -82,13 +82,8 @@ with high signam, why do other perform better?  Is that an issue with the random
 add AICc from see Yanagihara, et al. 2015
     # doi:10.1214/15-EJS1022
 
-How did the do simulations?
-exhaustive search?    
-Do best subset selection for combn(10, k) 1:5
-  evaluate average rank of best model
-  and probability that true model is best scoring?
-
-
+As expected with p > n, sum BIC is best method when Sigma is almost identity
+  can I fix that with adjusting gdf?
 
 
 
@@ -96,24 +91,8 @@ Do best subset selection for combn(10, k) 1:5
 devtools::reload("/Users/gabrielhoffman/workspace/repos/mvIC")
 
 
-```{r basic}
-n = 100
-p = 10
-m_active = 1
-X = matrix(rnorm(n*p), n, p)
-colnames(X) = paste0('X_', 1:p)
-beta = matrix(rnorm(m_active*p, 10), m_active,p)
-Noise = matrix(rnorm(n*p), n, p)
-Y = X[,1:m_active] %*% beta + Noise
-trueSet = sort(colnames(X)[1:m_active])
 
-bestModel = mvForwardStepwise( t(Y), ~1, X, colnames(X))
-
-bestModelNaive = mvForwardStepwise( t(Y), ~1, X, colnames(X), criterion="sum BIC")
-```
-
-```{r best.subset}
-
+```{r}
 bestsubset_search = function(Y, data, variables, maxk=5){
 
   res = lapply( 1:maxk, function(k){
@@ -124,7 +103,7 @@ bestsubset_search = function(Y, data, variables, maxk=5){
     res = lapply(formArray, function(form){
       fit = lm(as.formula(form), data=data)
 
-      res = lapply(c("EB", "var_unequal", "none"), function(method){
+      res = lapply(c("EB", "none"), function(method){
         res = lapply(c("AIC", "BIC", "sum AIC", "sum BIC"), function(criterion){
           if( length(grep("sum", criterion)) > 0 & method != "none" ) return(NULL)
 
@@ -139,6 +118,105 @@ bestsubset_search = function(Y, data, variables, maxk=5){
   })
   data.table(do.call(rbind, res))
 }
+```
+
+
+```{r basic}
+n = 50
+p = 100
+m_active = 2
+m_total = 10
+rho = .8
+sigFrac = .4
+X = matrix(rnorm(m_total*n), n, m_total)
+colnames(X) = paste0('X_', 1:m_total)
+trueSet = c('1', sort(colnames(X)[1:m_active]))
+# simulate coefficient for each gene
+beta = matrix(rnorm(p*m_active, 0, 10), m_active,p)
+eta = X[,1:m_active,drop=FALSE] %*% beta 
+
+trueModel = paste('Y ~', paste(colnames(X)[1:m_active], collapse=' + ')) 
+n_clusters = 5
+# changes correlation structure of noise. 
+clustID = sample.int(n_clusters, p, prob = dexp(1:n_clusters, .5), replace=TRUE)
+
+# sigList = lapply(unique(clustID), function(id){
+#   count = sum(clustID == id)                
+#   Sigma = matrix(rho, count, count)
+#   diag(Sigma) = 1
+#   Sigma
+#   })
+# Sigma = as.matrix(bdiag(sigList))
+
+Sigma = matrix(rho, p, p)
+diag(Sigma) = 1
+# Sigma = AR1(p, rho)
+Noise = rmvnorm(n, sig=Sigma)
+fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
+Y = eta + Noise*fctr  
+
+modelSearch = bestsubset_search(Y, as.data.frame(X), colnames(X), maxk=3)
+
+df = modelSearch[,data.frame(rank = rank(score), isTrue = form==trueModel) ,by=c('method', 'criterion')]
+df[isTrue==TRUE,1:3]
+
+
+
+# fit = lm(as.formula(trueModel), data=as.data.frame(X))
+# mvIC(fit, shrink.method="EB")
+# mvIC(fit, shrink.method="var_unequal")
+
+
+# res = mvIC:::eb_cov_est2(t(mvIC:::getResids(fit)))
+# str(res)
+
+
+
+# res = mvIC:::eb_cov_est3(t(mvIC:::getResids(fit)))
+# str(res)
+
+
+# # cov(t(mvIC:::getResids(fit)))
+# str(TAS::gcShrink(t(mvIC:::getResids(fit))))
+
+
+
+# str(eb_cov_est2(t(mvIC:::getResids(fit))))
+# str(eb_cov_est3(t(mvIC:::getResids(fit))))
+
+
+
+# The lambda from var_unequal seems to be better, but is not a likelihood estimate
+
+# How does scaling affect the log-likelihood??
+
+# mvIC:::eb_cov_est(t(residMatrix))
+# mvIC:::eb_cov_est(t(scale(residMatrix)))
+
+```
+
+```{r}
+
+# mvIC:::eb_cov_est(mvIC:::getResids(fit))
+
+# str(mvIC:::eb_cov_est2(mvIC:::getResids(fit)))
+
+
+# str(mvIC:::eb_cov_est3(t(mvIC:::getResids(fit))))
+
+
+
+
+
+```
+
+
+
+
+
+
+```{r best.subset}
+
 
 
 library(poolr)
@@ -153,14 +231,14 @@ library(TAS)
 
 set.seed(1)
 
-n_reps = 200   
-n = 200 # number of samples
-m_total = 8 # total number of variables
+n_reps = 10  
+n = 50 # number of samples
+m_total = 10 # total number of variables
 # n_clusters = 5
 
 m_active_array = 1
 signalFraction = .5 #seq(.2, .8, by=.2)
-ngenes_array = c(10, 400)
+ngenes_array = c(10, 100)
 rho_array = seq(0, .98, length.out=10)
 
 
@@ -208,7 +286,7 @@ resSearch = lapply(1:n_reps, function(k){
 
             message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ') 
  
-            modelSearch = bestsubset_search(Y, as.data.frame(X), colnames(X), maxk=)
+            modelSearch = bestsubset_search(Y, as.data.frame(X), colnames(X), maxk=3)
 
             trueModel = paste('Y ~', paste(colnames(X)[1:m_active], collapse=' + ')) 
 
@@ -216,7 +294,7 @@ resSearch = lapply(1:n_reps, function(k){
             # modelSearch[,form[which.min(score)],by=c('method', 'criterion')]
 
             # get best model
-            df = modelSearch[,data.frame(rank = order(score), isTrue = form==trueModel) ,by=c('method', 'criterion')]
+            df = modelSearch[,data.frame(rank = rank(score), isTrue = form==trueModel) ,by=c('method', 'criterion')]
 
             # rank of best model
             res = df[isTrue==TRUE,1:3]
