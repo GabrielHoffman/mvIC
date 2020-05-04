@@ -240,7 +240,7 @@ resSearch = data.table(resSearch)
 
 ```
 
-```{r plot.model.search}
+```{r plot.model.search, cache=FALSE}
 
 df = data.frame(resSearch[, data.frame(rank=mean(rank), sd=sd(rank)),by=c('method', 'criterion', 'm_active', 'p', 'rho', 'sigFrac')])
 
