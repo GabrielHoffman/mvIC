@@ -195,9 +195,9 @@ resSearch = lapply(1:n_reps, function(k){
           #   Sigma
           #   })
           # Sigma = as.matrix(bdiag(sigList))
-          # Sigma = matrix(rho, p, p)
-          # diag(Sigma) = 1
-          Sigma = AR1(p, rho)
+          Sigma = matrix(rho, p, p)
+          diag(Sigma) = 1
+          # Sigma = AR1(p, rho)
           Noise = rmvnorm(n, sig=Sigma)
 
           resSearch = lapply(signalFraction, function(sigFrac){
