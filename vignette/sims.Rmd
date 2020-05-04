@@ -154,13 +154,13 @@ library(TAS)
 set.seed(1)
 
 n_reps = 200   
-n = 50 # number of samples
+n = 500 # number of samples
 m_total = 8 # total number of variables
 # n_clusters = 5
 
 m_active_array = 1
 signalFraction = .5 #seq(.2, .8, by=.2)
-ngenes_array = c(10, 100)
+ngenes_array = c(10, 2000)
 rho_array = seq(0, .98, length.out=10)
 
 
@@ -208,7 +208,7 @@ resSearch = lapply(1:n_reps, function(k){
 
             message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ') 
  
-            modelSearch = bestsubset_search(Y, as.data.frame(X), colnames(X), maxk=4)
+            modelSearch = bestsubset_search(Y, as.data.frame(X), colnames(X), maxk=)
 
             trueModel = paste('Y ~', paste(colnames(X)[1:m_active], collapse=' + ')) 
 
@@ -242,17 +242,22 @@ resSearch = data.table(resSearch)
 
 ```{r plot.model.search, cache=FALSE}
 
+library(gridExtra)
+
 df = data.frame(resSearch[, data.frame(rank=mean(rank), sd=sd(rank)),by=c('method', 'criterion', 'm_active', 'p', 'rho', 'sigFrac')])
+df$isNone = "no"
+df$isNone[grep("none", df$method)] = 'yes'
 
 maxRank = max(df$rank)
 
 
 figList = lapply(unique(df$sigFrac), function(v){
-  ggplot( subset(df, sigFrac == v), aes(rho, rank, color=paste(method, criterion), fill=paste(method, criterion))) + geom_point() + geom_line() + geom_ribbon(aes(rho, ymin=pmax(rank-sd,0), ymax=pmin(rank+sd, maxRank)), alpha=.2, linetype=0) + facet_wrap( ~ m_active + p, nrow=1) + scale_color_discrete("Method") + scale_fill_discrete("Method") + theme_bw() + theme(aspect.ratio=1) + ggtitle(v) + scale_y_log10()
+  ggplot( subset(df, sigFrac == v), aes(rho, rank, color=paste(method, criterion), fill=paste(method, criterion))) + geom_point(aes(shape=isNone)) + geom_line()  + facet_wrap( ~ m_active + p, nrow=1) + scale_color_discrete("Method") + scale_fill_discrete("Method") + theme_bw() + theme(aspect.ratio=1) + ggtitle(v) + scale_y_log10() # + geom_ribbon(aes(rho, ymin=pmax(rank-sd,0), ymax=pmin(rank+sd, maxRank)), alpha=.2, linetype=0)
 })
 
+pdf("~/www/mvBIC.pdf", width=12)
 do.call("grid.arrange", c(figList, ncol=1))
-
+dev.off()
 
 
 
