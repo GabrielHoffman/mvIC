@@ -95,8 +95,8 @@ devtools::reload("/Users/gabrielhoffman/workspace/repos/mvIC")
 
 ```{r basic}
 n = 50
-p = 100
-m_active = 2
+p = 1000
+m_active = 1
 m_total = 10
 rho = .8
 sigFrac = .4
@@ -112,16 +112,16 @@ n_clusters = 5
 # changes correlation structure of noise. 
 clustID = sample.int(n_clusters, p, prob = dexp(1:n_clusters, .5), replace=TRUE)
 
-# sigList = lapply(unique(clustID), function(id){
-#   count = sum(clustID == id)                
-#   Sigma = matrix(rho, count, count)
-#   diag(Sigma) = 1
-#   Sigma
-#   })
-# Sigma = as.matrix(bdiag(sigList))
+sigList = lapply(unique(clustID), function(id){
+  count = sum(clustID == id)                
+  Sigma = matrix(rho, count, count)
+  diag(Sigma) = 1
+  Sigma
+  })
+Sigma = as.matrix(bdiag(sigList))
 
-Sigma = matrix(rho, p, p)
-diag(Sigma) = 1
+# Sigma = matrix(rho, p, p)
+# diag(Sigma) = 1
 # Sigma = AR1(p, rho)
 Noise = rmvnorm(n, sig=Sigma)
 fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
@@ -211,7 +211,7 @@ n_clusters = 5
 
 m_active_array = 1:2
 signalFraction = .5 #seq(.2, .8, by=.2)
-ngenes_array = c(10, 20, 30, 40, 60, 80, 100, 200)
+ngenes_array = c(10, 20, 30, 40, 60, 80, 100, 200, 1000)
 rho_array = seq(0, .98, length.out=12)
 
 

@@ -192,7 +192,7 @@ estimateMVN_EB = function(X, MAP=FALSE){
 	p = nrow(X)
 	phi = apply(X, 1, var)
 
-	if( n > 1){
+	if( n > p){
 		# O(np^2)
 		S = tcrossprod(X) # cov(t(X)) * (n-1)
 
