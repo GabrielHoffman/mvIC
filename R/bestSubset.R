@@ -16,7 +16,7 @@
 #' @export
 bestSubsetSearch = function(Y, data, variables, maxk=5){
 
-  res = lapply( 1:maxk, function(k){
+  res = lapply( seq_len(maxk), function(k){
     idx = combn(length(variables), k)
 
     formArray = apply(idx, 2, function(i) paste('Y ~', paste(variables[i], collapse=' + ')))

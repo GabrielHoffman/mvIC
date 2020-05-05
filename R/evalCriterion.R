@@ -224,7 +224,7 @@ mvIC_fit = function( exprObj, formula, data, criterion = c("AIC", "BIC", "AICC",
 			k = 1
 		}
 
-		fitList = fitVarPartModel( exprObj[1:k,,drop=FALSE], formula, data, showWarnings=FALSE, quiet=!verbose)
+		fitList = fitVarPartModel( exprObj[seq_len(k),,drop=FALSE], formula, data, showWarnings=FALSE, quiet=!verbose)
 
 		# get number of parameters
 		m <- nparam( fitList, nparamsMethod=nparamsMethod)
@@ -423,7 +423,7 @@ mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "AICC
 		if( criterion %in% c("AICC", "CAIC") & n < p){
 			stop(paste("Criterion", criterion, "cannot be evaluated when n < p"))
 		}
-		
+
 		# compute log determinant explicitly
 		# slower and not defined for low rank matrices
 		# dataTerm = n * determinant(crossprod(residMatrix), log=TRUE)$modulus[1]
@@ -556,7 +556,7 @@ setMethod("show", "mvIC", function( object ){
 
 #' Class mvIC_result
 #'
-#' Class stores result of \link{\code{mvForwardStepwise}}
+#' Class stores result of \code{mvForwardStepwise}
 #'
 #' @name mvIC_result-class
 #' @rdname mvIC_result-class

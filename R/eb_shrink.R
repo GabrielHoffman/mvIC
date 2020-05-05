@@ -159,7 +159,7 @@ ll_mvn_iw_eb_large_n = function(nu, phi, S, n){
 #' @importFrom CholWishart lmvgamma
 ll_mvn_iw_eb_large_p = function(nu, phi, a, n){
   # p = nrow(S)
-  length(phi)
+  p = length(phi)
   # -n*p/2*log(2*pi) + logh(nu, diag(phi*(nu - p - 1)), p) - logh(nu + n, diag(phi*(nu - p - 1)) + S, p)
 
   s = (nu - p - 1)
@@ -182,6 +182,8 @@ ll_mvn_iw_eb_large_p = function(nu, phi, a, n){
 #'
 #' @param X response matrix with responses on columns and samples on rows
 #' @param MAP compute Maximum a posteriori estimate of covariance between responses
+#' 
+#' Motivated by Empirical Bayes Estimate of Covariance for Multivariate Normal Distribution
 estimateMVN_EB = function(X, MAP=FALSE){
 
 	X = t(scale(X, scale=FALSE))	
@@ -194,7 +196,7 @@ estimateMVN_EB = function(X, MAP=FALSE){
 		# O(np^2)
 		S = tcrossprod(X) # cov(t(X)) * (n-1)
 
-		opt = optimize( ll_mvn_iw_eb_large_n, lower=p, upper=1e5, phi=phi, S=S, n=n, maximum=TRUE) 
+		opt = optimize( ll_mvn_iw_eb_large_n, lower=p-1 + .01, upper=1e5, phi=phi, S=S, n=n, maximum=TRUE) 
 	}else{
 		# O(n^2p)
 		# Hannart and Naveau equation 21
@@ -203,7 +205,7 @@ estimateMVN_EB = function(X, MAP=FALSE){
 		a = eigen(cP, only.values=TRUE, symmetric=TRUE)$values
 		a = c(a, rep(0, max(n,p) - length(a)))
 
-		opt = optimize( ll_mvn_iw_eb_large_p, lower=p, upper=1e5, phi=phi, a=a, n=n, maximum=TRUE) 
+		opt = optimize( ll_mvn_iw_eb_large_p, lower=p-1 + .01, upper=1e5, phi=phi, a=a, n=n, maximum=TRUE) 
 	}
 
 	nu = opt$maximum

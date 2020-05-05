@@ -9,7 +9,9 @@ estimateMVN_EB(X, MAP = FALSE)
 \arguments{
 \item{X}{response matrix with responses on columns and samples on rows}
 
-\item{MAP}{compute Maximum a posteriori estimate of covariance between responses}
+\item{MAP}{compute Maximum a posteriori estimate of covariance between responses
+
+Motivated by Empirical Bayes Estimate of Covariance for Multivariate Normal Distribution}
 }
 \description{
 Fit Multivariate Normal Inverse Wishart Model using Empirical Bayes

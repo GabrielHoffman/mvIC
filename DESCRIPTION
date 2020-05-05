@@ -24,6 +24,7 @@ Imports:
     limma,
     ShrinkCovMat,
     dplyr,
+    utils,
     CholWishart,
     stats
 RoxygenNote: 7.1.0

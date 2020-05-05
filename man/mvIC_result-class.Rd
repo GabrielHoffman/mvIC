@@ -5,5 +5,5 @@
 \alias{mvIC_result-class}
 \title{Class mvIC_result}
 \description{
-Class stores result of \link{\code{mvForwardStepwise}}
+Class stores result of \code{mvForwardStepwise}
 }
