@@ -296,7 +296,10 @@ eb_cov_est3 = function(X, MAP=FALSE){
 
 	# alpha = 1-1/(nu+n-p-1)
 
-	MAP is IW(nu +n, S0 + nS)
+	# Bayesian Inference Chapter 12
+	# Posterior for Sigma is IW(nu +n, S0 + nS), S = YY /n
+	# MAP is (S0 + nS)  / (nu + n + p + 1)
+
 
 	v = apply(X, 1, function(x) sum(x^2))
 	S = tcrossprod(X) / n
