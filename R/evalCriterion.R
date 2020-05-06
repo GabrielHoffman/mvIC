@@ -437,7 +437,7 @@ mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "AICC
 			lambda = res$alpha
 
             dataTerm = -2*res$logLik            
-			gdf_cov = p + 1#(1-lambda)*p*(p-1)/2
+			gdf_cov = p + (1-lambda)*p*(p-1)/2
 
 		}else{
 			# Evaluate logDet based on shrink.method

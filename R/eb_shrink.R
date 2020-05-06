@@ -116,7 +116,7 @@ eb_cov_est2 = function(X, MAP=TRUE){
 	phi = apply(X, 1, var)
 	S = tcrossprod(X) # cov(t(X)) * (n-1)
 
-	opt = optimize( ll, lower=p, upper=1e5, Phi=diag(phi), S=S, n=n, maximum=TRUE) 
+	opt = optimize( ll, lower=p+1 + .01, upper=1e5, Phi=diag(phi), S=S, n=n, maximum=TRUE) 
 	nu = opt$maximum
 
 	alpha = (nu-p-1) / (n+nu-p-1)
@@ -134,9 +134,9 @@ eb_cov_est2 = function(X, MAP=TRUE){
 }
 
 
-logh = function(nu, Phi_local, d){
-  nu/2 * determinant(Phi_local)$modulus[1] - (d*nu/2)*log(2) - CholWishart::lmvgamma(nu/2,d) 
-}
+# logh = function(nu, Phi_local, d){
+#   nu/2 * determinant(Phi_local)$modulus[1] - (d*nu/2)*log(2) - CholWishart::lmvgamma(nu/2,d) 
+# }
 
 
 #' @importFrom CholWishart lmvgamma
@@ -196,7 +196,7 @@ estimateMVN_EB = function(X, MAP=FALSE){
 		# O(np^2)
 		S = tcrossprod(X) # cov(t(X)) * (n-1)
 
-		opt = optimize( ll_mvn_iw_eb_large_n, lower=p-1 + .01, upper=1e5, phi=phi, S=S, n=n, maximum=TRUE) 
+		opt = optimize( ll_mvn_iw_eb_large_n, lower=p+1 + .01, upper=1e5, phi=phi, S=S, n=n, maximum=TRUE) 
 	}else{
 		# O(n^2p)
 		# Hannart and Naveau equation 21
@@ -205,7 +205,7 @@ estimateMVN_EB = function(X, MAP=FALSE){
 		a = eigen(cP, only.values=TRUE, symmetric=TRUE)$values
 		a = c(a, rep(0, max(n,p) - length(a)))
 
-		opt = optimize( ll_mvn_iw_eb_large_p, lower=p-1 + .01, upper=1e5, phi=phi, a=a, n=n, maximum=TRUE) 
+		opt = optimize( ll_mvn_iw_eb_large_p, lower=p+1 + .01, upper=1e5, phi=phi, a=a, n=n, maximum=TRUE) 
 	}
 
 	nu = opt$maximum
@@ -217,7 +217,7 @@ estimateMVN_EB = function(X, MAP=FALSE){
 		if( ! exists("S") ){
 			S = tcrossprod(X)
 		}
-		Sigmahat = (1-alpha) * S / (n-1) + alpha * diag(phi)
+		Sigmahat = (1-alpha) * S / (n-1) + diag(alpha * phi)
 	}else{
 		Sigmahat = NULL
 	}
@@ -226,6 +226,32 @@ estimateMVN_EB = function(X, MAP=FALSE){
 			alpha 		= alpha, 
 			Sigmahat 	= Sigmahat)
 }
+
+test_run = function(X){
+	X = t(scale(X, scale=FALSE))	
+
+	n = ncol(X)
+	p = nrow(X)
+	Phi = diag(apply(X, 1, var))
+	S = tcrossprod(X) 
+
+	ll_wiki = function(nu, Phi, S, n){
+		t1 = nu/2 * determinant(Phi)$modulus[1] + CholWishart::lmvgamma((nu+n)/2,p)
+		t2 = -(n*p)/2 * log(2*pi) - (nu+n)/2 * determinant(Phi + S)$modulus[1] - CholWishart::lmvgamma(nu/2,p)
+
+		t1 + t2
+	}
+
+	opt = optimize( ll_wiki, lower=0, upper=1e5, Phi=Phi, S=S, n=n, maximum=TRUE) 
+
+	nu = opt$maximum
+
+	alpha = (nu-p-1) / (n+nu-p-1)
+
+	list(	logLik 		= opt$objective[1],
+			alpha 		= alpha)
+}
+
 
 
 # mvn_iw_eb(t(mvIC:::getResids(fit)), MAP=FALSE)

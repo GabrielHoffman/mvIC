@@ -94,11 +94,13 @@ devtools::reload("/Users/gabrielhoffman/workspace/repos/mvIC")
 
 
 ```{r basic}
+library(Matrix)
+library(mvtnorm)
 n = 50
 p = 1000
 m_active = 1
 m_total = 10
-rho = .8
+rho = 0
 sigFrac = .4
 X = matrix(rnorm(m_total*n), n, m_total)
 colnames(X) = paste0('X_', 1:m_total)
@@ -138,6 +140,61 @@ df[isTrue==TRUE,1:3]
 # fit = lm(as.formula(trueModel), data=as.data.frame(X))
 # mvIC(fit, shrink.method="EB")
 # mvIC(fit, shrink.method="var_unequal")
+```
+
+```{r test methods}
+library(TAS)
+library(corpcor)
+library(ShrinkCovMat)
+set.seed(1)
+res = lapply( c(seq(10, 90, by=10), seq(100, 1000, by=50)), function(p){
+  n = 50
+  m_active = 1
+  m_total = 10
+  rho = 0
+  sigFrac = .4
+  X = matrix(rnorm(m_total*n), n, m_total)
+  colnames(X) = paste0('X_', 1:m_total)
+  trueSet = c('1', sort(colnames(X)[1:m_active]))
+  # simulate coefficient for each gene
+  beta = matrix(rnorm(p*m_active, 0, 10), m_active,p)
+  eta = X[,1:m_active,drop=FALSE] %*% beta 
+
+  trueModel = paste('Y ~', paste(colnames(X)[1:m_active], collapse=' + ')) 
+  n_clusters = 5
+  # changes correlation structure of noise. 
+  clustID = sample.int(n_clusters, p, prob = dexp(1:n_clusters, .5), replace=TRUE)
+
+  sigList = lapply(unique(clustID), function(id){
+    count = sum(clustID == id)                
+    Sigma = matrix(rho, count, count)
+    diag(Sigma) = 1
+    Sigma
+    })
+  Sigma = as.matrix(bdiag(sigList))
+
+  # Sigma = matrix(rho, p, p)
+  # diag(Sigma) = 1
+  # Sigma = AR1(p, rho)
+  Noise = rmvnorm(n, sig=Sigma)
+  fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
+  Y = eta + Noise*fctr  
+
+  modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=2)
+
+  modelSearch = data.table(modelSearch)
+  df = modelSearch[,data.frame(rank = rank(score), isTrue = form==trueModel) ,by=c('method', 'criterion')]
+  df[isTrue==TRUE,1:3]
+
+
+  fit = lm(as.formula(trueModel), data=as.data.frame(X))
+  lambda = mvIC(fit, shrink.method="EB")@params$lambda
+
+  data.frame(lambda, p, rank=df[isTrue==TRUE,1:3][2,3])#, Strimmer = attr(cov.shrink(t(mvIC:::getResids(fit)), lambda.var=0, verbose=FALSE), "lambda"), Touloumis = shrinkcovmat.unequal((mvIC:::getResids(fit)))$lambdahat, test = test_run(t(mvIC:::getResids(fit))))
+# gcShrink = gcShrink((mvIC:::getResids(fit)))$optimalpha )
+})
+res = do.call(rbind, res)
+
 
 
 # res = mvIC:::eb_cov_est2(t(mvIC:::getResids(fit)))
@@ -209,7 +266,7 @@ n = 50 # number of samples
 m_total = 10 # total number of variables
 n_clusters = 5
 
-m_active_array = 1:2
+m_active_array = 1
 signalFraction = .5 #seq(.2, .8, by=.2)
 ngenes_array = c(10, 20, 30, 40, 60, 80, 100, 200, 1000)
 rho_array = seq(0, .98, length.out=12)
@@ -304,11 +361,11 @@ maxRank = max(df$rank)
 
 
 figList = lapply(unique(df$sigFrac), function(v){
-  ggplot( subset(df, sigFrac == v), aes(rho, rank, color=paste(method, criterion), fill=paste(method, criterion))) + geom_point(aes(shape=isNone)) + geom_line()  + facet_wrap( ~ m_active + p, nrow=1) + scale_color_discrete("Method") + scale_fill_discrete("Method") + theme_bw() + theme(aspect.ratio=1) + ggtitle(v) + scale_y_log10() # + geom_ribbon(aes(rho, ymin=pmax(rank-sd,0), ymax=pmin(rank+sd, maxRank)), alpha=.2, linetype=0)
+  ggplot( subset(df, sigFrac == v), aes(rho, rank, color=paste(method, criterion), fill=paste(method, criterion))) + geom_point(aes(shape=isNone)) + geom_line()  + facet_wrap( ~ m_active + p, nrow=2) + scale_color_discrete("Method") + scale_fill_discrete("Method") + theme_bw() + theme(aspect.ratio=1) + ggtitle(v) + scale_y_log10() # + geom_ribbon(aes(rho, ymin=pmax(rank-sd,0), ymax=pmin(rank+sd, maxRank)), alpha=.2, linetype=0)
 })
 
 pdf("~/www/mvBIC.pdf", width=12)
-do.call("grid.arrange", c(figList, ncol=1))
+do.call("grid.arrange", c(figList, nrow=1))
 dev.off()
 
 
