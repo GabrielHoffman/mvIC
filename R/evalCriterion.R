@@ -433,8 +433,13 @@ mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "AICC
 			# responses are *rows*
 			# res = eb_cov_est( t(residMatrix) )
 			# res = eb_cov_est2( t(residMatrix) )
-			res = estimateMVN_EB( t(residMatrix) )
+			res = eb_cov_est3( t(residMatrix) )
+			# res = estimateMVN_EB( t(residMatrix) )
 			lambda = res$alpha
+
+			# b = beam::beam(t(residMatrix), verbose=FALSE)
+			# lambda = b@alphaOpt
+			# res = list(logLik = b@valOpt)
 
             dataTerm = -2*res$logLik            
 			gdf_cov = p + (1-lambda)*p*(p-1)/2

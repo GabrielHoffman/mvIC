@@ -51,6 +51,14 @@ suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(mvIC))
 suppressPackageStartupMessages(library(variancePartition))
 
+library(Matrix)
+library(mvtnorm)
+library(TAS)
+library(corpcor)
+library(ShrinkCovMat)
+library(beam)
+library(sparseMVN)
+
 options(xtable.type="html")
 
 setDTthreads(3, restore_after_fork=FALSE)
@@ -92,16 +100,13 @@ devtools::reload("/Users/gabrielhoffman/workspace/repos/mvIC")
 
 
 
-
 ```{r basic}
-library(Matrix)
-library(mvtnorm)
 n = 50
 p = 1000
 m_active = 1
 m_total = 10
 rho = 0
-sigFrac = .4
+sigFrac = .5
 X = matrix(rnorm(m_total*n), n, m_total)
 colnames(X) = paste0('X_', 1:m_total)
 trueSet = c('1', sort(colnames(X)[1:m_active]))
@@ -120,20 +125,21 @@ sigList = lapply(unique(clustID), function(id){
   diag(Sigma) = 1
   Sigma
   })
-Sigma = as.matrix(bdiag(sigList))
+Sigma = bdiag(sigList)
 
 # Sigma = matrix(rho, p, p)
 # diag(Sigma) = 1
 # Sigma = AR1(p, rho)
-Noise = rmvnorm(n, sig=Sigma)
+Noise = rmvn.sparse(n, mu = rep(0, p), CH=Cholesky(Sigma))
 fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
 Y = eta + Noise*fctr  
 
-modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=3)
+modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=1)
 
 modelSearch = data.table(modelSearch)
 df = modelSearch[,data.frame(rank = rank(score), isTrue = form==trueModel) ,by=c('method', 'criterion')]
 df[isTrue==TRUE,1:3]
+
 
 
 
@@ -143,16 +149,13 @@ df[isTrue==TRUE,1:3]
 ```
 
 ```{r test methods}
-library(TAS)
-library(corpcor)
-library(ShrinkCovMat)
-set.seed(1)
-res = lapply( c(seq(10, 90, by=10), seq(100, 1000, by=50)), function(p){
+set.seed(2)
+res = lapply( c(seq(10, 90, by=10), seq(100, 1000, by=200)), function(p){
   n = 50
   m_active = 1
   m_total = 10
-  rho = 0
-  sigFrac = .4
+  rho = .8
+  sigFrac = .5
   X = matrix(rnorm(m_total*n), n, m_total)
   colnames(X) = paste0('X_', 1:m_total)
   trueSet = c('1', sort(colnames(X)[1:m_active]))
@@ -171,16 +174,16 @@ res = lapply( c(seq(10, 90, by=10), seq(100, 1000, by=50)), function(p){
     diag(Sigma) = 1
     Sigma
     })
-  Sigma = as.matrix(bdiag(sigList))
+  Sigma = bdiag(sigList)
 
   # Sigma = matrix(rho, p, p)
   # diag(Sigma) = 1
-  # Sigma = AR1(p, rho)
-  Noise = rmvnorm(n, sig=Sigma)
+  # Sigma = AR1(p, rho)  
+  Noise = rmvn.sparse(n, mu = rep(0, p), CH=Cholesky(Sigma))
   fctr = mean(apply(eta,1, var)) * (1-sigFrac)/sigFrac
   Y = eta + Noise*fctr  
 
-  modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=2)
+  modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=1)
 
   modelSearch = data.table(modelSearch)
   df = modelSearch[,data.frame(rank = rank(score), isTrue = form==trueModel) ,by=c('method', 'criterion')]
@@ -190,12 +193,56 @@ res = lapply( c(seq(10, 90, by=10), seq(100, 1000, by=50)), function(p){
   fit = lm(as.formula(trueModel), data=as.data.frame(X))
   lambda = mvIC(fit, shrink.method="EB")@params$lambda
 
-  data.frame(lambda, p, rank=df[isTrue==TRUE,1:3][2,3])#, Strimmer = attr(cov.shrink(t(mvIC:::getResids(fit)), lambda.var=0, verbose=FALSE), "lambda"), Touloumis = shrinkcovmat.unequal((mvIC:::getResids(fit)))$lambdahat, test = test_run(t(mvIC:::getResids(fit))))
-# gcShrink = gcShrink((mvIC:::getResids(fit)))$optimalpha )
+  # b = beam::beam(t(mvIC:::getResids(fit)) )
+  # b@alphaOpt
+  # b@valOpt
+
+  data.frame(lambda, p, rank=df[isTrue==TRUE,1:3][2,3], Strimmer = attr(cov.shrink(t(mvIC:::getResids(fit)), lambda.var=0, verbose=FALSE), "lambda"), Touloumis = shrinkcovmat.unequal((mvIC:::getResids(fit)))$lambdahat, eb_cov_est3 = mvIC:::eb_cov_est3(t(mvIC:::getResids(fit)))$alpha, gcShrink = gcShrink((mvIC:::getResids(fit)), plot=FALSE)$optimalpha )
 })
 res = do.call(rbind, res)
 
 
+
+
+
+# fit = lm(as.formula(trueModel), data=as.data.frame(X))
+# fitB = lm(Y ~ X_3, data=as.data.frame(X))
+
+# a = mvIC(fit, shrink.method="EB", criterion = "BIC")
+
+# b = mvIC(fitB, shrink.method="EB", criterion = "BIC")
+
+# a < b
+
+
+
+
+# fit = lm(as.formula(trueModel), data=as.data.frame(X))
+# fitB = lm(Y ~ X_3, data=as.data.frame(X))
+
+# a = mvIC(fit, shrink.method="EB", criterion = "BIC")
+
+# b = mvIC(fitB, shrink.method="EB", criterion = "BIC")
+
+# a < b
+
+
+
+# mvIC:::estimateMVN_EB( t(mvIC:::getResids(fit)) )
+
+
+# mvIC:::test_run( t(mvIC:::getResids(fit)) )
+
+# eb_cov_est3( t(mvIC:::getResids(fit)), MAP=FALSE )
+
+
+# mvIC:::eb_cov_est2( t(mvIC:::getResids(fit)), MAP=FALSE )
+
+
+# mvIC:::eb_cov_est( t(mvIC:::getResids(fit)) )
+
+# b = beam::beam(t(mvIC:::getResids(fit)) )
+# str(b)
 
 # res = mvIC:::eb_cov_est2(t(mvIC:::getResids(fit)))
 # str(res)
@@ -236,18 +283,18 @@ res = do.call(rbind, res)
 
 
 
-
+ 
 
 ```
 
 
-
+--->
 
 
 
 ```{r best.subset}
 
-
+  
 
 library(poolr)
 library(mvIC)
@@ -259,25 +306,22 @@ library(Matrix)
 library(gridExtra)
 library(TAS)
 
-set.seed(1)
-
-n_reps = 100  
+set.seed(2)
+   
+n_reps = 1
 n = 50 # number of samples
 m_total = 10 # total number of variables
 n_clusters = 5
 
 m_active_array = 1
-signalFraction = .5 #seq(.2, .8, by=.2)
-ngenes_array = c(10, 20, 30, 40, 60, 80, 100, 200, 1000)
-rho_array = seq(0, .98, length.out=12)
-
-
+signalFraction = .4 #seq(.2, .8, by=.2)
+ngenes_array = 1000 #c(10, 20, 30, 40, 60, 80, 100, 200, 1000)
+rho_array = seq(0, .98, length.out=5)
+ 
 resSearch = lapply(1:n_reps, function(k){
     
-  set.seed(k)
-
   resSearch = lapply(m_active_array, function(m_active){
-
+  
     # simulate variables
     X = matrix(rnorm(m_total*n), n, m_total)
     colnames(X) = paste0('X_', 1:m_total)
@@ -302,11 +346,11 @@ resSearch = lapply(1:n_reps, function(k){
             diag(Sigma) = 1
             Sigma
             })
-          Sigma = as.matrix(bdiag(sigList))
+          Sigma = bdiag(sigList)
           # Sigma = matrix(rho, p, p)
           # diag(Sigma) = 1
           # Sigma = AR1(p, rho)
-          Noise = rmvnorm(n, sig=Sigma)
+          Noise = rmvn.sparse(n, mu = rep(0, p), CH=Cholesky(Sigma))
 
           resSearch = lapply(signalFraction, function(sigFrac){
 
@@ -343,7 +387,7 @@ resSearch = lapply(1:n_reps, function(k){
       do.call(rbind, resSearch)
     })
     do.call(rbind, resSearch)
-})
+})   
 resSearch = do.call(rbind, resSearch)
 resSearch = data.table(resSearch)
 
@@ -364,9 +408,9 @@ figList = lapply(unique(df$sigFrac), function(v){
   ggplot( subset(df, sigFrac == v), aes(rho, rank, color=paste(method, criterion), fill=paste(method, criterion))) + geom_point(aes(shape=isNone)) + geom_line()  + facet_wrap( ~ m_active + p, nrow=2) + scale_color_discrete("Method") + scale_fill_discrete("Method") + theme_bw() + theme(aspect.ratio=1) + ggtitle(v) + scale_y_log10() # + geom_ribbon(aes(rho, ymin=pmax(rank-sd,0), ymax=pmin(rank+sd, maxRank)), alpha=.2, linetype=0)
 })
 
-pdf("~/www/mvBIC.pdf", width=12)
+# pdf("~/www/mvBIC.pdf", width=12)
 do.call("grid.arrange", c(figList, nrow=1))
-dev.off()
+# dev.off()
 
 
 

@@ -268,34 +268,59 @@ test_run = function(X){
 
 
 
-# eb_cov_est3 = function(X, MAP=TRUE){
+eb_cov_est3 = function(X, MAP=FALSE){
 
-# 	X = t(scale(X, scale=FALSE))	
+	X = t(scale(X, scale=FALSE))	
 
-# 	n = ncol(X)
-# 	p = nrow(X)
+	n = ncol(X)
+	p = nrow(X)
 
-# 	S = tcrossprod(X) / (n-1)
-# 	f = function(alpha){
-# 		Sigma = (1-alpha) * S + alpha * diag(diag(S))
-# 		nu = n*alpha/(1-alpha) + p + 1
-# 		mniw::dMT(t(X), nu=nu, SigmaC = Sigma, log=TRUE)
-# 	}
+	# S = tcrossprod(X) / (n-1)
+	# f = function(alpha){
+	# 	Sigma = (1-alpha) * S + alpha * diag(diag(S))
+	# 	nu = n*alpha/(1-alpha) + p + 1
+	# 	mniw::dMT(t(X), nu=nu, SigmaC = Sigma, log=TRUE)
+	# }
+	# opt = optimize(f, lower=1e-4, upper=1-1e-4, maximum=TRUE)
+	# alpha = opt$maximum
 
-# 	opt = optimize(f, lower=1e-4, upper=1-1e-4, maximum=TRUE)
-# 	alpha = opt$maximum
+	# v = apply(X, 1, function(x) sum(x^2))
+	# S = tcrossprod(X)
+	# f = function(nu){
+	# 	Sigma = ((nu-p-1)*diag(v) + S) / (nu+n-p-1)
+	# 	mniw::dMT(t(X), nu=nu, SigmaC = Sigma, log=TRUE)
+	# }
+	# opt = optimize(f, lower=p+1, upper=1e5, maximum=TRUE)
+	
+	# nu = opt$maximum
 
-# 	# compute MAP estimate
-# 	if( MAP ){
-# 		Sigmahat = (1-alpha) * S + alpha * diag(diag(S))
-# 	}else{
-# 		Sigmahat = NULL
-# 	}
+	# alpha = 1-1/(nu+n-p-1)
 
-# 	list(logLik = opt$objective,
-# 			alpha = alpha, 
-# 			Sigmahat = Sigmahat)
-# }
+	MAP is IW(nu +n, S0 + nS)
+
+	v = apply(X, 1, function(x) sum(x^2))
+	S = tcrossprod(X) / n
+	f = function(nu){
+		Sigma = (diag(v) + S*n) / (n+nu+p+1)
+		mniw::dMT(t(X), nu=nu, SigmaC = Sigma, log=TRUE)
+	}
+	opt = optimize(f, lower=0, upper=1e5, maximum=TRUE)
+	
+	nu = opt$maximum
+
+	alpha = 1-n/(n+nu+p+1)
+
+	# compute MAP estimate
+	if( MAP ){
+		Sigmahat = (1-alpha) * S + alpha * diag(diag(S))
+	}else{
+		Sigmahat = NULL
+	}
+
+	list(logLik = opt$objective,
+			alpha = alpha, 
+			Sigmahat = Sigmahat)
+}
 
 # delta_diag = diag(D)
 # ( n*alpha/(1-alpha) + p + 1) * sum(log(alpha/(1-alpha) * delta_diag))
