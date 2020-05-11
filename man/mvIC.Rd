@@ -6,8 +6,8 @@
 \usage{
 mvIC(
   fitList,
-  criterion = c("AIC", "BIC", "AICC", "CAIC", "sum AIC", "sum BIC"),
-  shrink.method = c("var_equal", "var_unequal", "EB", "none"),
+  criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"),
+  shrink.method = c("none", "var_equal", "var_unequal", "EB"),
   nparamsMethod = c("edf", "countLevels", "lme4"),
   ...
 )

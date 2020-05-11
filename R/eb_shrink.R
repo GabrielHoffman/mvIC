@@ -139,6 +139,10 @@ eb_cov_est2 = function(X, MAP=TRUE){
 # }
 
 
+lmvgamma_diff = function(x,x2, p){
+  sum(sapply(1:p, function(j) lgamma(x + (1-j)/2))) - sum(sapply(1:p, function(j) lgamma(x2 + (1-j)/2)))
+}
+
 #' @importFrom CholWishart lmvgamma
 ll_mvn_iw_eb_large_n = function(nu, phi, S, n){
   p = nrow(S)
@@ -147,12 +151,13 @@ ll_mvn_iw_eb_large_n = function(nu, phi, S, n){
   s = (nu - p - 1)
   term1 = -n*p/2*log(2*pi)
   term2 = nu/2 * sum(log(phi*s))
-  term2a = -(p*nu/2)*log(2) - CholWishart::lmvgamma(nu/2,p) 
+  term2a = -(p*nu/2)*log(2) #- CholWishart::lmvgamma(nu/2,p) 
 
   term3 = (nu+n)/2 * determinant(diag(phi*s) + S)$modulus[1] 
-  term3a = - (p*(nu+n)/2)*log(2) - CholWishart::lmvgamma((nu+n)/2,p) 
+  term3a = - (p*(nu+n)/2)*log(2) #- CholWishart::lmvgamma((nu+n)/2,p) 
 
-  term1 + (term2 + term2a) - (term3 + term3a)
+  # term1 + (term2 + term2a) - (term3 + term3a)
+  term1 + (term2 + term2a) - (term3 + term3a) - lmvgamma_diff(nu/2, (nu+n)/2,p)
 }
 
 
@@ -165,13 +170,14 @@ ll_mvn_iw_eb_large_p = function(nu, phi, a, n){
   s = (nu - p - 1)
   term1 = -n*p/2*log(2*pi)
   term2 = nu/2 * sum(log(phi*s))
-  term2a = -(p*nu/2)*log(2) - CholWishart::lmvgamma(nu/2,p) 
+  term2a = -(p*nu/2)*log(2) #- CholWishart::lmvgamma(nu/2,p) 
 
   term3 = (nu+n)/2 * (sum(log(phi)) + sum(log(s + a )) )
   # term3 = (nu+n)/2 * determinant(diag(phi*s) + S)$modulus[1] 
-  term3a = - (p*(nu+n)/2)*log(2) - CholWishart::lmvgamma((nu+n)/2,p) 
+  term3a = - (p*(nu+n)/2)*log(2) #- CholWishart::lmvgamma((nu+n)/2,p) 
 
-  term1 + (term2 + term2a) - (term3 + term3a)
+  # term1 + (term2 + term2a) - (term3 + term3a)
+  term1 + (term2 + term2a) - (term3 + term3a) - lmvgamma_diff(nu/2, (nu+n)/2,p)
 
 }
 
@@ -242,7 +248,7 @@ test_run = function(X){
 		t1 + t2
 	}
 
-	opt = optimize( ll_wiki, lower=0, upper=1e5, Phi=Phi, S=S, n=n, maximum=TRUE) 
+	opt = optimize( ll_wiki, lower=p+1, upper=1e5, Phi=Phi, S=S, n=n, maximum=TRUE) 
 
 	nu = opt$maximum
 
@@ -266,64 +272,110 @@ test_run = function(X){
 
 
 
-
+# X = t(mvIC:::getResids(fit))
 
 eb_cov_est3 = function(X, MAP=FALSE){
 
-	X = t(scale(X, scale=FALSE))	
+	X = scale(X, scale=FALSE)
 
-	n = ncol(X)
-	p = nrow(X)
+	n = nrow(X)
+	p = ncol(X)
 
-	# S = tcrossprod(X) / (n-1)
-	# f = function(alpha){
-	# 	Sigma = (1-alpha) * S + alpha * diag(diag(S))
-	# 	nu = n*alpha/(1-alpha) + p + 1
-	# 	mniw::dMT(t(X), nu=nu, SigmaC = Sigma, log=TRUE)
+	v = apply(X, 2, function(x) sum(x^2))
+	Sigma = diag(v)
+	Omega = crossprod(X) / (n-1)
+
+	# ll = function(nu, Omega, Sigma){
+	# 	-n*p/2*log(pi) + CholWishart::lmvgamma((nu+n)/2,p) - CholWishart::lmvgamma(nu/2,p) -n/2*determinant(Sigma*(nu-p-1))$modulus[1] -(nu+n)/2*determinant(diag(n) + X %*% solve(Sigma, t(X)) )$modulus[1]
 	# }
-	# opt = optimize(f, lower=1e-4, upper=1-1e-4, maximum=TRUE)
-	# alpha = opt$maximum
-
-	# v = apply(X, 1, function(x) sum(x^2))
-	# S = tcrossprod(X)
-	# f = function(nu){
-	# 	Sigma = ((nu-p-1)*diag(v) + S) / (nu+n-p-1)
-	# 	mniw::dMT(t(X), nu=nu, SigmaC = Sigma, log=TRUE)
-	# }
-	# opt = optimize(f, lower=p+1, upper=1e5, maximum=TRUE)
-	
-	# nu = opt$maximum
-
-	# alpha = 1-1/(nu+n-p-1)
-
-	# Bayesian Inference Chapter 12
-	# Posterior for Sigma is IW(nu +n, S0 + nS), S = YY /n
-	# MAP is (S0 + nS)  / (nu + n + p + 1)
-
-
-	v = apply(X, 1, function(x) sum(x^2))
-	S = tcrossprod(X) / n
-	f = function(nu){
-		Sigma = (diag(v) + S*n) / (n+nu+p+1)
-		mniw::dMT(t(X), nu=nu, SigmaC = Sigma, log=TRUE)
+	ll = function(v, Omega, Sigma){
+		-n*p/2*log(pi) + CholWishart::lmvgamma((v+n+p-1)/2,p) - CholWishart::lmvgamma((v+p-1)/2,p) -n/2*determinant(Sigma)$modulus[1] -(v+n+p-1)/2*determinant(diag(n) + X %*% solve(Sigma, t(X)) )$modulus[1]
+	}
+	f = function(nu){		
+		mniw::dMT(X, nu=nu, SigmaC = Sigma *nu, log=TRUE)
+		 # ll(nu+2, Omega, Sigma*nu)
 	}
 	opt = optimize(f, lower=0, upper=1e5, maximum=TRUE)
 	
-	nu = opt$maximum
+	opt
 
-	alpha = 1-n/(n+nu+p+1)
+
+	nu = opt$maximum 
+
+	lambda = nu / (nu+n)
+
+	# ll = function(v, Omega, Sigma){
+	# 	-n*p/2*log(pi) + CholWishart::lmvgamma((v+n+p-1)/2,p) - CholWishart::lmvgamma((v+p-1)/2,p) -n/2*determinant(Sigma)$modulus[1] -(v+n+p-1)/2*determinant(diag(n) + X %*% solve(Sigma, t(X)) )$modulus[1]
+	# }
+	# f = function(nu){		
+	# 	mniw::dMT(X, nu=nu-p+1, SigmaC = Sigma * (nu-p-1), log=TRUE)
+	# 	# ll(nu-p+1, Omega, Sigma*(nu-p-1))
+	# }
+
+	# optimize(f, lower=p+1, upper=1e5, maximum=TRUE)
+	
+	# nu = opt$maximum 
+
+	# lambda = (nu-p-1)/(n+nu-p-1)
 
 	# compute MAP estimate
 	if( MAP ){
-		Sigmahat = (1-alpha) * S + alpha * diag(diag(S))
+		S = lambda * Sigma + (1-lambda) * Omega
 	}else{
-		Sigmahat = NULL
+		S = NULL
 	}
 
 	list(logLik = opt$objective,
-			alpha = alpha, 
-			Sigmahat = Sigmahat)
+			alpha = lambda, 
+			nu = nu,
+			Sigmahat = S)
 }
+
+ll_wishart = function(W, S, nu){
+	k = nrow(W)
+
+	-nu*k*log(2) - (k*(k-1)/4)*log(pi) - sum(sapply(1:k, function(i){lgamma(nu+1-i)/2})) - nu/2*determinant(S)$modulus[1] + (nu+k+1)/2*determinant(W)$modulus[1] - 1/2 * sum(diag(solve(W, S)))
+}
+
+
+ll_mvt = function(nu, Sigma, mu){
+	d = p = ncol(mu)
+	n = nrow(mu)
+
+	-n*d/2 *log(pi) + CholWishart::lmvgamma((nu+d)/2, p) - CholWishart::lmvgamma(d/2, p) -1/2*determinant(Sigma)$modulus[1] -(nu+d)/2 * determinant(diag(p) + crossprod(mu, solve(Sigma, mu)))$modulus[1]
+}
+
+
+
+# X = mvIC:::getResids(fit)
+# mu = X
+# Lamb0 = diag(apply(X, 1, function(x) sum(x^2)))
+# S = tcrossprod(X)
+ 
+# d = p = ncol(mu)
+# 	n = nrow(mu) 
+
+# Lamb_n = Lamb0 + S
+
+# f = function(nu0){	
+
+# 	ll_mvt( nu0 + n-d+1, Lamb_n/(n*(nu0+n-d+1)), mu)
+
+# 	# mniw::dMT(X, nu=nu0 + n-d+1, SigmaR = Lamb_n/(n*(nu0+n-d+1)), log=TRUE)
+# }
+
+# opt = optimize(f, lower=d+1, upper=1e8, maximum=TRUE)
+# opt
+# nu0 = opt$maximum
+
+
+# lambda = (nu0 - p - 1) / (n+nu0 - p - 1)
+# lambda
+
+
+# MAP = lambda*Lamb0 + (1-lambda)*S
+
+
 
 # delta_diag = diag(D)
 # ( n*alpha/(1-alpha) + p + 1) * sum(log(alpha/(1-alpha) * delta_diag))

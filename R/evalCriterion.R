@@ -30,7 +30,7 @@
 #' @importFrom stats as.formula
 #' @importFrom dplyr as_tibble
 #' @export
-mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion = c("AIC", "BIC", "AICC", "CAIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "EB", "none"), nparamsMethod = c("edf", "countLevels", "lme4"), deltaCutoff = 5, verbose=TRUE,...  ){
+mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "none", "var_equal", "var_unequal", "EB"), nparamsMethod = c("edf", "countLevels", "lme4"), deltaCutoff = 5, verbose=TRUE,...  ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -191,7 +191,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 #' @import variancePartition 
 #'
 #' @export
-mvIC_fit = function( exprObj, formula, data, criterion = c("AIC", "BIC", "AICC", "CAIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "EB", "none"), nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE, ... ){
+mvIC_fit = function( exprObj, formula, data, criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "none", "var_equal", "var_unequal", "EB"), nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE, ... ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -382,7 +382,7 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 #' 
 #' @importFrom methods is
 #' @export
-mvIC = function( fitList, criterion =c("AIC", "BIC", "AICC", "CAIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "EB", "none"), nparamsMethod = c("edf", "countLevels", "lme4"), ...){
+mvIC = function( fitList, criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "none", "var_equal", "var_unequal", "EB"), nparamsMethod = c("edf", "countLevels", "lme4"), ...){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -410,7 +410,7 @@ mvIC = function( fitList, criterion =c("AIC", "BIC", "AICC", "CAIC", "sum AIC", 
 #' @param ... other arguments passed to logDet
 #' 
 #' @importFrom methods new
-mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "AICC", "CAIC", "sum AIC", "sum BIC"), shrink.method = c("var_equal", "var_unequal", "EB", "none"), ... ){
+mvIC_from_residuals = function( residMatrix, m, criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "none", "var_equal", "var_unequal", "EB"), ... ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -433,8 +433,8 @@ mvIC_from_residuals = function( residMatrix, m, criterion =c("AIC", "BIC", "AICC
 			# responses are *rows*
 			# res = eb_cov_est( t(residMatrix) )
 			# res = eb_cov_est2( t(residMatrix) )
-			res = eb_cov_est3( t(residMatrix) )
-			# res = estimateMVN_EB( t(residMatrix) )
+			# res = eb_cov_est3( t(residMatrix) )
+			res = estimateMVN_EB( t(residMatrix) )
 			lambda = res$alpha
 
 			# b = beam::beam(t(residMatrix), verbose=FALSE)

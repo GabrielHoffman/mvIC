@@ -1,6 +1,6 @@
 
 <div align="right">
-<img src="https://users.hpc.mssm.edu/~hoffmg01/software/mvIC/mvIC_logo.png" alt="mvIC logo" width="100px"><br>
+<img src="http://deepfigv.mssm.edu/img/software/mvIC/mvIC_logo.png" alt="mvIC logo" width="100px"><br>
 </div>
 
 
@@ -25,16 +25,6 @@ This automatically installs dependencies from [Bioconductor](https://bioconducto
 # Evaluate model fit
 fit1 = lm( cbind(Sepal.Width, Sepal.Length) ~ Species, data=iris)
 score = mvIC( fit1 )
-```
-The variable `score` now contains the `mvIC` value and method used. It also contains values for `n` samples, `p` response variables and `m` parameters.
-```r
-print(score)
-[1] 979.6136
-attr(,"nparamsMethod")
-[1] "lm"
-attr(,"params")
-    n p m
-1 150 2 4
 ```
 
 ```r
@@ -70,4 +60,4 @@ If a random effect is specified, a linear mixed model is fit and the number of p
 
 
 ## Documentation
-See [manual](https://users.hpc.mssm.edu/~hoffmg01/software/mvIC/mvIC-manual.pdf) for examples and documentation.
+See [manual](http://deepfigv.mssm.edu/img/software/mvIC/mvIC-manual.pdf) for examples and documentation.
