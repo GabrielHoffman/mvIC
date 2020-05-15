@@ -1,0 +1,172 @@
+---
+title: "Simulations for covariance estimation"
+author:
+- name: "[Gabriel Hoffman](http://gabrielhoffman.github.io)"
+  affiliation: | 
+    Icahn School of Medicine at Mount Sinai, New York
+abstract: > 
+  Compare multiple shrinkage methods for covariance estimation<br>
+  <br>
+  `r format(Sys.time(),'%B %d, %Y %H:%M:%S')`<br>  
+
+output:
+  rmarkdown::html_document:
+    highlight: pygments
+    toc: false
+    toc_depth: 3
+    fig_width: 5
+vignette: >
+  %\VignetteIndexEntry{}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  %\usepackage[utf8]{inputenc}
+---
+
+
+
+<!---
+
+rmarkdown::render("sim_compare_estimates.Rmd")
+
+devtools::reload("../")
+
+--->
+
+
+```{r setup, echo=FALSE, results="hide"}
+knitr::opts_chunk$set(tidy=FALSE, 
+					  cache=TRUE,				  
+                      dev=c("png", "pdf"),
+                      package.startup.message = FALSE,
+                      message=FALSE, 
+                      error=FALSE, 
+                      warning=FALSE)
+options(width=100)
+```	
+
+```{r library}
+library(TAS)
+library(beam)
+library(corpcor)
+library(ShrinkCovMat)
+library(mvtnorm)
+library(CovTools)
+library(mvIC)
+library(reshape2)
+library(ggplot2)
+library(bayesSurv)
+
+# calculate inverse correlation matrix given rho and p
+calc_inv_corr = function(rho, p){
+	# https://math.stackexchange.com/questions/1762990/inverse-of-a-correlation-matrix-when-all-the-correlations-are-equal
+	a = 1-rho
+	A = diag(a, p)
+	u = rep(sqrt(rho), p)
+	# Sigma = A + u %*% t(u)
+	solve_A = diag(1/(1-rho), p)
+	# SigInv = solve(A) - (tcrossprod(solve(A, u))) / (1 + crossprod(u, solve(A, u)))[1]
+	# solve_A - (tcrossprod(solve_A %*% u)) / (1 + crossprod(u, solve_A %*% u))[1]
+
+	solve_A - tcrossprod(u/a) / (1 + crossprod(u, u/a))[1]
+}
+```
+
+# Vary number of responses
+```{r sim1, fig.width=7, fig.height=7}
+
+n = 200
+rho = .5 
+
+df = lapply( c(seq(10, 200, by=10), seq(250, 500, by=100)), function(p){
+
+	# cat(p, "\n")  
+
+	# responses are columns
+	Y = rMVNorm( n, Q = calc_inv_corr(rho, p))
+
+	fitBeam = beam( Y, verbose=FALSE ) 
+	# fitGC = gcShrink( t(Y), var=3, cor=1, plot=FALSE)
+	fitStrimmer = cov.shrink( Y, lambda.var=0, verbose=FALSE)
+	fitSCM = shrinkcovmat.unequal( t(Y) )
+
+	target = diag(apply(Y, 2, var))
+	fitLW = CovEst.2003LW(Y, target) 
+	fitOAS = CovEst.2010OAS(Y)
+	fitRBLW = CovEst.2010RBLW(Y) 
+ 
+	data.frame( n, p, 
+		beam 			= fitBeam@alphaOpt,
+		# gcShrink		= fitGC$optimalpha,
+		cov.shrink		= attr(fitStrimmer, "lambda"), 
+		shrinkcovmat 	= fitSCM$lambdahat, 
+		LW 				= fitLW$delta, 
+		OAS 			= fitOAS$rho, 
+		RBLW 			= fitRBLW$rho,
+		eb_cov_est 		= mvIC:::eb_cov_est(t(Y))$alpha,
+		estimateMVN_EB 	= mvIC:::estimateMVN_EB(Y)$alpha	)
+}) 
+df = do.call(rbind, df)
+   
+df2 = melt(df, id.vars=c('p', 'n'))
+
+ggplot(df2, aes(p, value, color=variable)) + geom_point() + geom_line() + theme_bw() + theme(aspect.ratio=1) + scale_color_discrete("Method") + xlab("# responses") + ylab("alpha") + ylim(0,1)
+
+```
+
+# Vary number of samples
+```{r sim2, fig.width=7, fig.height=7}
+p = 5000
+rho = .1
+
+Y_all = t(rMVNorm( 1000, Q = calc_inv_corr(rho, p)))
+
+df = lapply( c(4:9, seq(10, 100, by=10), seq(150, 500, by=100)), function(n){
+
+	message(n, "\n")
+	
+	Y = t(Y_all[,1:n])
+ 
+	fitBeam = beam( Y, verbose=FALSE ) 
+	# fitGC = gcShrink( t(Y), var=3, cor=1, plot=FALSE)
+	fitStrimmer = cov.shrink( Y, lambda.var=0, verbose=FALSE)
+	fitSCM = shrinkcovmat.unequal( t(Y) )
+
+	target = diag(apply(Y, 2, var))
+	# fitLW = CovEst.2003LW(Y, target)
+	# fitOAS = CovEst.2010OAS(Y) 
+	# fitRBLW = CovEst.2010RBLW(Y) 
+   
+	data.frame( n, p, 
+		beam 			= fitBeam@alphaOpt,
+		# gcShrink		= fitGC$optimalpha,
+		cov.shrink		= attr(fitStrimmer, "lambda"), 
+		shrinkcovmat 	= fitSCM$lambdahat, 
+		# LW 				= fitLW$delta, 
+		# OAS 			= fitOAS$rho, 
+		# RBLW 			= fitRBLW$rho,
+		eb_cov_est 		= mvIC:::eb_cov_est(t(Y))$alpha,
+		estimateMVN_EB 	= mvIC:::estimateMVN_EB(Y)$alpha)
+})
+df = do.call(rbind, df)
+ 
+df2 = melt(df, id.vars=c('p', 'n'))
+
+ggplot(df2, aes(n, value, color=variable)) + geom_point() + geom_line() + theme_bw() + theme(aspect.ratio=1, legend.position="right") + scale_color_discrete("Method") + xlab("# samples") + ylab("alpha") + ylim(0,1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
