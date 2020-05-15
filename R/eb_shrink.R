@@ -34,7 +34,8 @@ loglikelihood_large_n = function(alpha, n, p, X, delta_diag, S){
 	# S = crossprod(t(X)) / (n-1)
 	term2 = -1*(n/(1-alpha) + p + 1) * determinant( S + alpha/(1-alpha) * diag(delta_diag))$modulus[1]
 
-	term3 = 2*(lmvgamma((n/(1-alpha) + p + 1)/2, p) - lmvgamma((n*alpha/(1-alpha) + p + 1)/2, p))
+	# term3 = 2*(lmvgamma((n/(1-alpha) + p + 1)/2, p) - lmvgamma((n*alpha/(1-alpha) + p + 1)/2, p))
+	term3 = 2*lmvgamma_diff((n/(1-alpha) + p + 1)/2, (n*alpha/(1-alpha) + p + 1)/2,  p )
 
 	term1 + term2 + term3 - ((n * p) / 2) * log(2 * pi)
 }
@@ -49,7 +50,8 @@ loglikelihood_large_p = function(alpha, n, p, X, delta_diag, a){
 	g = sum(log(delta_diag)) + sum(log(alpha/(1-alpha) + a ))
 	term2 = -1*(n/(1-alpha) + p + 1) * g
 
-	term3 = 2*(lmvgamma((n/(1-alpha) + p + 1)/2, p) - lmvgamma((n*alpha/(1-alpha) + p + 1)/2, p))
+	# term3 = 2*(lmvgamma((n/(1-alpha) + p + 1)/2, p) - lmvgamma((n*alpha/(1-alpha) + p + 1)/2, p))
+	term3 = 2*lmvgamma_diff((n/(1-alpha) + p + 1)/2, (n*alpha/(1-alpha) + p + 1)/2,  p )
 
 	term1 + term2 + term3 - ((n * p) / 2) * log(2 * pi)
 }
@@ -73,7 +75,7 @@ eb_cov_est = function(X){
 		S = crossprod(t(X)) / (n-1)
 
 		f = function(alpha, n, p, X, delta_diag, S){
-		   loglikelihood_large_n(alpha, n, p, X, delta_diag, S)
+		   loglikelihood_large_n(alpha, n, p, X, delta_diag, S) + dbeta(alpha, (p/n)^2, (n/p)^2, log=TRUE)
 		}
 		opt = optimize( f, lower=0, upper=1, n=n, p=p, X=X, delta_diag=delta_diag, S=S, maximum=TRUE)		
 	}else{
@@ -85,13 +87,48 @@ eb_cov_est = function(X){
 		a = c(a, rep(0, max(n,p) - length(a)))
 
 		g = function(alpha, n, p, X, delta_diag, S, a){
-		   loglikelihood_large_p(alpha, n, p, X, delta_diag, a)
+		   loglikelihood_large_p(alpha, n, p, X, delta_diag, a) + dbeta(alpha, (p/n)^2, (n/p)^2, log=TRUE)
 		}
 		opt = optimize( g, lower=0, upper=1, n=n, p=p, X=X, delta_diag=delta_diag, a=a, maximum=TRUE)
 	}
 	
 	with(opt, list(logLik = objective, alpha = maximum))
 }
+
+f = function(){
+ 
+v = 2
+
+par(mfrow=c(1,2))
+x = seq(1e-4, 1-1e-4, length=100)
+y = dbeta(x, (p/n)^v, (n/p)^v, log=TRUE)
+plot(x,y)
+
+
+y = sapply(x, function(alpha){
+	loglikelihood_large_p(alpha, n, p, X, delta_diag, a) + dbeta(alpha, (p/n)^v, (n/p)^v, log=TRUE)
+	} )
+plot(x, y)
+
+
+
+}
+# optList = lapply(2:length(x), function(i){
+# 	g = function(alpha, n, p, X, delta_diag, S, a){
+# 	   loglikelihood_large_p(alpha, n, p, X, delta_diag, a) + dbeta(alpha, 1000,1000, log=TRUE) 
+# 	}
+# 	optimize( g, lower=x[i-1], upper=x[i], n=n, p=p, X=X, delta_diag=delta_diag, a=a, maximum=TRUE)
+
+# 	# g = function(alpha, n, p, X, delta_diag){
+# 	#    loglikelihood_orig(alpha, n, p, X, delta_diag)
+# 	# }
+# 	# optimize( g, lower=x[i-1], upper=x[i], n=n, p=p, X=X, delta_diag=delta_diag, maximum=TRUE)
+# })
+# optList = data.frame(do.call(rbind, optList))
+
+# with(optList, maximum[which.max(objective)])
+
+# plot(optList)
 
 
 
@@ -140,7 +177,8 @@ eb_cov_est2 = function(X, MAP=TRUE){
 
 
 lmvgamma_diff = function(x,x2, p){
-  sum(sapply(1:p, function(j) lgamma(x + (1-j)/2))) - sum(sapply(1:p, function(j) lgamma(x2 + (1-j)/2)))
+  # sum(sapply(1:p, function(j) lgamma(x + (1-j)/2))) - sum(sapply(1:p, function(j) lgamma(x2 + (1-j)/2)))
+   sum(sapply(1:p, function(j) lgamma(x + (1-j)/2) - lgamma(x2 + (1-j)/2)))
 }
 
 #' @importFrom CholWishart lmvgamma
@@ -170,15 +208,19 @@ ll_mvn_iw_eb_large_p = function(nu, phi, a, n){
   s = (nu - p - 1)
   term1 = -n*p/2*log(2*pi)
   term2 = nu/2 * sum(log(phi*s))
-  term2a = -(p*nu/2)*log(2) #- CholWishart::lmvgamma(nu/2,p) 
+  # term2a = -(p*nu/2)*log(2) #- CholWishart::lmvgamma(nu/2,p) 
 
   term3 = (nu+n)/2 * (sum(log(phi)) + sum(log(s + a )) )
   # term3 = (nu+n)/2 * determinant(diag(phi*s) + S)$modulus[1] 
-  term3a = - (p*(nu+n)/2)*log(2) #- CholWishart::lmvgamma((nu+n)/2,p) 
+  # term3a = - (p*(nu+n)/2)*log(2) #- CholWishart::lmvgamma((nu+n)/2,p) 
+
+  # term2a - term3a
+  # (-(p*nu/2) + (p*(nu+n)/2))*log(2)
+  # ((p*(n)/2))*log(2)
 
   # term1 + (term2 + term2a) - (term3 + term3a)
-  term1 + (term2 + term2a) - (term3 + term3a) - lmvgamma_diff(nu/2, (nu+n)/2,p)
-
+  # term1 + (term2 + term2a) - (term3 + term3a) - lmvgamma_diff(nu/2, (nu+n)/2,p)
+  term1 + term2 - term3 - lmvgamma_diff(nu/2, (nu+n)/2,p) + (p*n/2)*log(2)
 }
 
 
@@ -202,7 +244,7 @@ estimateMVN_EB = function(X, MAP=FALSE){
 		# O(np^2)
 		S = tcrossprod(X) # cov(t(X)) * (n-1)
 
-		opt = optimize( ll_mvn_iw_eb_large_n, lower=p+1 + .01, upper=1e5, phi=phi, S=S, n=n, maximum=TRUE) 
+		opt = optimize( ll_mvn_iw_eb_large_n, lower=p+1 + 1e-6, upper=1e6, phi=phi, S=S, n=n, maximum=TRUE) 
 	}else{
 		# O(n^2p)
 		# Hannart and Naveau equation 21
@@ -211,7 +253,7 @@ estimateMVN_EB = function(X, MAP=FALSE){
 		a = eigen(cP, only.values=TRUE, symmetric=TRUE)$values
 		a = c(a, rep(0, max(n,p) - length(a)))
 
-		opt = optimize( ll_mvn_iw_eb_large_p, lower=p+1 + .01, upper=1e5, phi=phi, a=a, n=n, maximum=TRUE) 
+		opt = optimize( ll_mvn_iw_eb_large_p, lower=p+1 + 1e-6, upper=1e6, phi=phi, a=a, n=n, maximum=TRUE)
 	}
 
 	nu = opt$maximum
@@ -220,9 +262,9 @@ estimateMVN_EB = function(X, MAP=FALSE){
 
 	# compute MAP estimate
 	if( MAP ){
-		if( ! exists("S") ){
+		# if( ! exists("S") ){
 			S = tcrossprod(X)
-		}
+		# }
 		Sigmahat = (1-alpha) * S / (n-1) + diag(alpha * phi)
 	}else{
 		Sigmahat = NULL
@@ -259,6 +301,16 @@ test_run = function(X){
 }
 
 
+
+
+	# x = exp(seq(log(p+3), log(1e5), length=100))
+
+	# optList = lapply(2:length(x), function(i){
+	# 	optimize( ll_mvn_iw_eb_large_p, lower=x[i-1], upper=x[i], phi=phi, a=a, n=n, maximum=TRUE)
+	# })
+	# optList = do.call(rbind, optList)
+
+	# plot(optList, log='x')
 
 # mvn_iw_eb(t(mvIC:::getResids(fit)), MAP=FALSE)
 
