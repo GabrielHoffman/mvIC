@@ -1,6 +1,6 @@
 
 <div align="right">
-<img src="http://deepfigv.mssm.edu/img/software/mvIC/mvIC_logo.png" alt="mvIC logo" width="100px"><br>
+<img src="https://deepfigv.mssm.edu/img/software/mvIC/mvIC_logo.png" alt="mvIC logo" width="100px"><br>
 </div>
 
 ![Image of Yaktocat](https://deepfigv.mssm.edu/img/software/mvIC/mvIC_logo.png)
