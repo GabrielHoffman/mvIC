@@ -3,7 +3,7 @@
 <img src="http://deepfigv.mssm.edu/img/software/mvIC/mvIC_logo.png" alt="mvIC logo" width="100px"><br>
 </div>
 
-![Image of Yaktocat](https://octodex.github.com/images/yaktocat.png)
+![Image of Yaktocat](https://deepfigv.mssm.edu/img/software/mvIC/mvIC_logo.png)
 
 # Evaluate information criteria for multivariate model selection
 
