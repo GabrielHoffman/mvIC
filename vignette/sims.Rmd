@@ -177,7 +177,7 @@ estimate_covariance( t(mvIC:::getResids(fit)))
 
 ```
 
-```{r test methods}
+```{r test methods, eval=FALSE}
 set.seed(2)
 res = lapply( c(seq(10, 90, by=10), seq(100, 1100, by=200)), function(p){
   cat(p, "\n")
@@ -400,7 +400,7 @@ mvIC:::eb_cov_est3((mvIC:::getResids(fit)))$alpha
 
 ```
 
-```{r test.norm}
+```{r test.norm, eval=FALSE}
 set.seed(2)
 res = lapply( c(seq(10, 90, by=10), seq(100, 1100, by=50)), function(p){
   cat(p, "\n")
