@@ -585,7 +585,7 @@ resSearch = data.table(resSearch)
 
 ```
 
-```{r plot.model.search, cache=FALSE, fig.width=15, fig.height=30}
+```{r plot.model.search, cache=FALSE, fig.width=15, fig.height=20}
 
 library(gridExtra)
 
