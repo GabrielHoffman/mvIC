@@ -100,7 +100,7 @@ devtools::reload("/Users/gabrielhoffman/workspace/repos/mvIC")
 
 <!---
 
-```{r basic}
+```{r basic, eval=FALSE}
 n = 300
 p = 5000
 m_active = 2
@@ -481,8 +481,6 @@ res = do.call(rbind, res)
 
 ```{r best.subset}
 
-     
-
 library(poolr)
 library(mvIC)
 library(ggplot2)
@@ -547,7 +545,11 @@ resSearch = lapply(1:n_reps, function(k){
 
             message("\rk = ", k, '  p = ', p, ' rho = ', round(rho,2), ' sigFrac = ', sigFrac,  ' m_active = ', m_active, '        ') 
  
-            modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=3)
+            fit = lm(Y ~ 1, data=as.data.frame(X))
+            res = mvIC:::estimate_covariance( t(mvIC:::getResids(fit)))
+            lambda = res$lambda
+
+            modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=3, lambda=lambda)
             modelSearch = data.table(modelSearch)
 
             trueModel = paste('Y ~', paste(colnames(X)[1:m_active], collapse=' + ')) 
