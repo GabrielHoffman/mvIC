@@ -601,7 +601,7 @@ figList = lapply(unique(df$sigFrac), function(v){
 })
 
 # pdf("~/www/mvBIC.pdf", width=12)
-do.call("grid.arrange", c(figList, nrow=1))
+do.call("grid.arrange", c(figList, ncol=1))
 # dev.off()
 
 
