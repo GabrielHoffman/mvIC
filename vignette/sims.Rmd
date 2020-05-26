@@ -496,7 +496,7 @@ library(TAS)
 
 set.seed(2)
    
-n_reps = 1
+n_reps = 10
 n = 50 # number of samples
 m_total = 10 # total number of variables
 n_clusters = 5
