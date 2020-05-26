@@ -142,6 +142,9 @@ fit = lm(Y ~ 1, data=as.data.frame(X))
 res = mvIC:::estimate_covariance( t(mvIC:::getResids(fit)))
 lambda = res$lambda
 
+# R = t(mvIC:::getResids(fit))
+# CovEst.2003LW(R, diag(apply(R, 2, var))) 
+
 
 modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=2, lambda=lambda)
 
@@ -582,7 +585,7 @@ resSearch = data.table(resSearch)
 
 ```
 
-```{r plot.model.search, cache=FALSE}
+```{r plot.model.search, cache=FALSE, fig.width=20, fig.height=10}
 
 library(gridExtra)
 
