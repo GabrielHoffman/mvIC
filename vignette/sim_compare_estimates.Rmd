@@ -44,7 +44,7 @@ knitr::opts_chunk$set(tidy=FALSE,
 options(width=100)
 ```	
 
-```{r library}
+```{r library, cache=FALSE}
 library(TAS)
 library(beam)
 library(corpcor)
@@ -55,8 +55,11 @@ library(mvIC)
 library(reshape2)
 library(ggplot2)
 library(bayesSurv)
+library(cowplot)
 
 # calculate inverse correlation matrix given rho and p
+# compute inverse correlation matrix directly from correlation values
+# used for fast simulation of large scale correlations
 calc_inv_corr = function(rho, p){
 	# https://math.stackexchange.com/questions/1762990/inverse-of-a-correlation-matrix-when-all-the-correlations-are-equal
 	a = 1-rho
@@ -72,86 +75,162 @@ calc_inv_corr = function(rho, p){
 ```
 
 # Vary number of responses
-```{r sim1, fig.width=7, fig.height=7}
+```{r sim1, fig.width=10, fig.height=5}
 
-n = 200
-rho = .5 
+n = 500
+rho = .4 
 
-df = lapply( c(seq(10, 200, by=10), seq(250, 500, by=100)), function(p){
+resList = lapply( c(seq(10, 200, by=10), seq(250, 500, by=100)), function(p){
 
 	# cat(p, "\n")  
 
 	# responses are columns
 	Y = rMVNorm( n, Q = calc_inv_corr(rho, p))
 
+	# true correlation matrix
+	Sigma = matrix(rho, p, p)
+	diag(Sigma) = 1
+
 	fitBeam = beam( Y, verbose=FALSE ) 
 	# fitGC = gcShrink( t(Y), var=3, cor=1, plot=FALSE)
-	fitStrimmer = cov.shrink( Y, lambda.var=0, verbose=FALSE)
+	# fitStrimmer = cov.shrink( Y, lambda.var=0, verbose=FALSE)
 	fitSCM = shrinkcovmat.unequal( t(Y) )
 
 	target = diag(apply(Y, 2, var))
-	fitLW = CovEst.2003LW(Y, target) 
-	fitOAS = CovEst.2010OAS(Y)
-	fitRBLW = CovEst.2010RBLW(Y) 
+	# fitLW = CovEst.2003LW(Y, target) 
+	# fitOAS = CovEst.2010OAS(Y)
+	# fitRBLW = CovEst.2010RBLW(Y) 
+
+	# my implementations
+	eb1 = mvIC:::eb_cov_est(t(Y), MAP=TRUE)
+	eb2 = mvIC:::estimateMVN_EB(Y, MAP=TRUE)
+
+	# beam estimate
+	S = crossprod(Y) / (n-1)
+	alpha = fitBeam@alphaOpt
+	Sigmahat_beam = (1-alpha) * S  + alpha * diag(apply(Y, 2, var))
+
+	resNorm = data.frame( n, p,
+		beam 			= norm(Sigmahat_beam - Sigma, "F"),
+		# gcShrink		= norm(fitGC$sigmahat - Sigma, "F"),
+		# Simple 			= norm( diag(apply(Y, 2, var)) - Sigma, "F"),
+		# cov.shrink		= norm(fitStrimmer - Sigma, "F"), 
+		shrinkcovmat 	= norm(fitSCM$Sigmahat - Sigma, "F"),
+		# LW 				= norm(fitLW$S - Sigma, "F"),
+		# OAS 			= norm(fitOAS$S - Sigma, "F"),
+		# RBLW 			= norm(fitRBLW$S - Sigma, "F"),
+		eb_cov_est 		= norm(eb1$Sigmahat - Sigma, "F"),
+		estimateMVN_EB 	= norm(eb2$Sigmahat - Sigma, "F"))
  
-	data.frame( n, p, 
+	resAlpha = data.frame( n, p, 
 		beam 			= fitBeam@alphaOpt,
 		# gcShrink		= fitGC$optimalpha,
-		cov.shrink		= attr(fitStrimmer, "lambda"), 
+		# cov.shrink		= attr(fitStrimmer, "lambda"), 
 		shrinkcovmat 	= fitSCM$lambdahat, 
-		LW 				= fitLW$delta, 
-		OAS 			= fitOAS$rho, 
-		RBLW 			= fitRBLW$rho,
-		eb_cov_est 		= mvIC:::eb_cov_est(t(Y))$alpha,
-		estimateMVN_EB 	= mvIC:::estimateMVN_EB(Y)$alpha	)
+		# LW 				= fitLW$delta, 
+		# OAS 			= fitOAS$rho, 
+		# RBLW 			= fitRBLW$rho,
+		eb_cov_est 		= eb1$alpha,
+		estimateMVN_EB 	= eb2$alpha	)
+
+	list(resNorm = resNorm, 
+		resAlpha = resAlpha)
 }) 
-df = do.call(rbind, df)
-   
+
+df = do.call(rbind, lapply(resList, function(x) x$resAlpha))
 df2 = melt(df, id.vars=c('p', 'n'))
 
-ggplot(df2, aes(p, value, color=variable)) + geom_point() + geom_line() + theme_bw() + theme(aspect.ratio=1) + scale_color_discrete("Method") + xlab("# responses") + ylab("alpha") + ylim(0,1)
+fig1 = ggplot(df2, aes(p, value, color=variable, shape=variable)) + geom_point() + geom_line() + theme_bw() + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_color_discrete("Method") + xlab("# responses") + ylab("alpha") + ylim(0,1) + ggtitle("Estimate alpha")
+
+
+df = do.call(rbind, lapply(resList, function(x) x$resNorm))
+df2 = melt(df, id.vars=c('p', 'n'))
+
+fig2 = ggplot(df2, aes(p, value, color=variable, shape=variable)) + geom_point() + geom_line() + theme_bw() + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_color_discrete("Method") + xlab("# responses") + ylab("Estimation error") + ggtitle("Compute estimation error")
+
+plot_grid(fig1, fig2)
 
 ```
 
 # Vary number of samples
-```{r sim2, fig.width=7, fig.height=7}
-p = 5000
-rho = .1
+```{r sim2, fig.width=10, fig.height=5}
+p = 1000
+rho = .4 
 
 Y_all = t(rMVNorm( 1000, Q = calc_inv_corr(rho, p)))
 
-df = lapply( c(4:9, seq(10, 100, by=10), seq(150, 500, by=100)), function(n){
+# true correlation matrix
+Sigma = matrix(rho, p, p)
+diag(Sigma) = 1
 
-	message(n, "\n")
+resList = lapply( c(4:9, seq(10, 100, by=10), seq(150, 500, by=100)), function(n){
+
+	message(n)
 	
 	Y = t(Y_all[,1:n])
  
 	fitBeam = beam( Y, verbose=FALSE ) 
 	# fitGC = gcShrink( t(Y), var=3, cor=1, plot=FALSE)
-	fitStrimmer = cov.shrink( Y, lambda.var=0, verbose=FALSE)
+	# fitStrimmer = cov.shrink( Y, lambda.var=0, verbose=FALSE)
 	fitSCM = shrinkcovmat.unequal( t(Y) )
 
-	target = diag(apply(Y, 2, var))
+	# target = diag(apply(Y, 2, var))
 	# fitLW = CovEst.2003LW(Y, target)
 	# fitOAS = CovEst.2010OAS(Y) 
 	# fitRBLW = CovEst.2010RBLW(Y) 
-   
-	data.frame( n, p, 
+
+	# my implementations
+	eb1 = mvIC:::eb_cov_est(t(Y), MAP=TRUE)
+	eb2 = mvIC:::estimateMVN_EB(Y, MAP=TRUE)
+
+
+	# beam estimate
+	S = crossprod(Y) / (n-1)
+	alpha = fitBeam@alphaOpt
+	Sigmahat_beam = (1-alpha) * S  + alpha * diag(apply(Y, 2, var))
+
+	resNorm = data.frame( n, p,
+		beam 			= norm(Sigmahat_beam - Sigma, "F"),
+		# gcShrink		= norm(fitGC$sigmahat - Sigma, "F"),
+		# Simple 			= norm( diag(apply(Y, 2, var)) - Sigma, "F"),
+		# cov.shrink		= norm(fitStrimmer - Sigma, "F"), 
+		shrinkcovmat 	= norm(fitSCM$Sigmahat - Sigma, "F"),
+		# LW 				= norm(fitLW$S - Sigma, "F"),
+		# OAS 			= norm(fitOAS$S - Sigma, "F"),
+		# RBLW 			= norm(fitRBLW$S - Sigma, "F"),
+		eb_cov_est 		= norm(eb1$Sigmahat - Sigma, "F"),
+		estimateMVN_EB 	= norm(eb2$Sigmahat - Sigma, "F"))
+ 
+	resAlpha = data.frame( n, p, 
 		beam 			= fitBeam@alphaOpt,
 		# gcShrink		= fitGC$optimalpha,
-		cov.shrink		= attr(fitStrimmer, "lambda"), 
+		# cov.shrink		= attr(fitStrimmer, "lambda"), 
 		shrinkcovmat 	= fitSCM$lambdahat, 
 		# LW 				= fitLW$delta, 
 		# OAS 			= fitOAS$rho, 
 		# RBLW 			= fitRBLW$rho,
-		eb_cov_est 		= mvIC:::eb_cov_est(t(Y))$alpha,
-		estimateMVN_EB 	= mvIC:::estimateMVN_EB(Y)$alpha)
-})
-df = do.call(rbind, df)
- 
+		eb_cov_est 		= eb1$alpha,
+		estimateMVN_EB 	= eb2$alpha	)
+
+	list(resNorm = resNorm, 
+		resAlpha = resAlpha)
+}) 
+
+
+df = do.call(rbind, lapply(resList, function(x) x$resAlpha))
 df2 = melt(df, id.vars=c('p', 'n'))
 
-ggplot(df2, aes(n, value, color=variable)) + geom_point() + geom_line() + theme_bw() + theme(aspect.ratio=1, legend.position="right") + scale_color_discrete("Method") + xlab("# samples") + ylab("alpha") + ylim(0,1)
+fig1 = ggplot(df2, aes(n, value, color=variable, shape=variable)) + geom_point() + geom_line() + theme_bw() + theme(aspect.ratio=1, legend.position="right", plot.title = element_text(hjust = 0.5)) + scale_color_discrete("Method") + xlab("# samples") + ylab("alpha") + ylim(0,1) + ggtitle("Estimation alpha")
+
+
+df = do.call(rbind, lapply(resList, function(x) x$resNorm))
+df2 = melt(df, id.vars=c('p', 'n'))
+
+ylim = c(0,  max(df[df$n>30,-c(1,2)]))
+fig2 = ggplot(df2, aes(n, value, color=variable, shape=variable)) + geom_point() + geom_line() + theme_bw() + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_color_discrete("Method") + xlab("# samples") + ylab("Estimation error") + ggtitle("Compute estimation error") + ylim(ylim)
+
+plot_grid(fig1, fig2)
+
 ```
 
 

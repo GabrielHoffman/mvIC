@@ -410,7 +410,7 @@ mvIC = function( fitList, criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC",
 #' @param ... other arguments passed to logDet
 #' 
 #' @importFrom methods new
-mvIC_from_residuals = function( residMatrix, m, criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "none", "var_equal", "var_unequal", "EB"), ... ){
+mvIC_from_residuals = function( residMatrix, m, criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "none", "var_equal", "var_unequal", "EB"), lambda = NULL,... ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -431,15 +431,20 @@ mvIC_from_residuals = function( residMatrix, m, criterion = c("sum BIC", "AIC", 
 		if( shrink.method == "EB"){
 
 			# responses are *rows*
-			res = eb_cov_est( t(residMatrix) )
+			# res = eb_cov_est( residMatrix )
 			# res = eb_cov_est2( t(residMatrix) )
 			# res = eb_cov_est3( t(residMatrix) )
 			# res = estimateMVN_EB( t(residMatrix) )
-			lambda = res$alpha
+			# lambda = res$alpha
+
+			# res = estimate_covariance( t(residMatrix) )
+			# lambda = res$lambda
 
 			# b = beam::beam(t(residMatrix), verbose=FALSE)
 			# lambda = b@alphaOpt
 			# res = list(logLik = b@valOpt)
+
+			res = list(logLik = eval_cov_logLik( t(residMatrix), lambda) )
 
             dataTerm = -2*res$logLik            
 			gdf_cov = p + (1-lambda)*p*(p-1)/2

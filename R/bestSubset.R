@@ -14,7 +14,7 @@
 #' @importFrom utils combn
 #' @importFrom stats lm
 #' @export
-bestSubsetSearch = function(Y, data, variables, maxk=5){
+bestSubsetSearch = function(Y, data, variables, maxk=5,...){
 
   res = lapply( seq_len(maxk), function(k){
     idx = combn(length(variables), k)
@@ -35,7 +35,7 @@ bestSubsetSearch = function(Y, data, variables, maxk=5){
           if( (method == "none") & !(criterion %in% c("sum AIC", "sum BIC")) & (p > n) ) return(NULL)     
           if( (method == "EB") & (criterion %in% c("sum AIC", "sum BIC")) ) return(NULL)     
 
-          score = mvIC(fit, shrink.method=method, criterion=criterion)
+          score = mvIC(fit, shrink.method=method, criterion=criterion,...)
 
           data.frame(k=k,form=form, method=method, criterion=criterion, score = score[1], stringsAsFactors=FALSE)
         })

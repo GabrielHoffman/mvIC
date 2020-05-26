@@ -60,7 +60,7 @@ loglikelihood_large_p = function(alpha, n, p, X, delta_diag, a){
 # responses are *rows*
 #' @importFrom CholWishart lmvgamma
 #' @importFrom stats optimize
-eb_cov_est = function(X){
+eb_cov_est = function(X, MAP=FALSE){
 
 	n = ncol(X)
 	p = nrow(X)
@@ -75,7 +75,7 @@ eb_cov_est = function(X){
 		S = crossprod(t(X)) / (n-1)
 
 		f = function(alpha, n, p, X, delta_diag, S){
-		   loglikelihood_large_n(alpha, n, p, X, delta_diag, S) + dbeta(alpha, (p/n)^2, (n/p)^2, log=TRUE)
+		   loglikelihood_large_n(alpha, n, p, X, delta_diag, S) #+ dbeta(alpha, (p/n)^2, (n/p)^2, log=TRUE)
 		}
 		opt = optimize( f, lower=0, upper=1, n=n, p=p, X=X, delta_diag=delta_diag, S=S, maximum=TRUE)		
 	}else{
@@ -87,28 +87,40 @@ eb_cov_est = function(X){
 		a = c(a, rep(0, max(n,p) - length(a)))
 
 		g = function(alpha, n, p, X, delta_diag, S, a){
-		   loglikelihood_large_p(alpha, n, p, X, delta_diag, a) + dbeta(alpha, (p/n)^2, (n/p)^2, log=TRUE)
+		   loglikelihood_large_p(alpha, n, p, X, delta_diag, a) #+ dbeta(alpha, (p/n)^2, (n/p)^2, log=TRUE)
 		}
 		opt = optimize( g, lower=0, upper=1, n=n, p=p, X=X, delta_diag=delta_diag, a=a, maximum=TRUE)
 	}
+
+
+	# compute MAP estimate
+	if( MAP ){
+		S = crossprod(t(X)) / (n-1)
+		alpha = opt$maximum
+		Sigmahat = (1-alpha) * S  + alpha * diag(delta_diag)
+	}else{
+		Sigmahat = NULL
+	}
 	
-	with(opt, list(logLik = objective, alpha = maximum))
+	list(	logLik 	= opt$objective, 
+			alpha 	= opt$maximum,
+			Sigmahat = Sigmahat)
 }
 
 f = function(){
  
-v = 2
+	v = 2
 
-par(mfrow=c(1,2))
-x = seq(1e-4, 1-1e-4, length=100)
-y = dbeta(x, (p/n)^v, (n/p)^v, log=TRUE)
-plot(x,y)
+	par(mfrow=c(1,2))
+	x = seq(1e-4, 1-1e-4, length=100)
+	y = dbeta(x, (p/n)^v, (n/p)^v, log=TRUE)
+	plot(x,y)
 
 
-y = sapply(x, function(alpha){
-	loglikelihood_large_p(alpha, n, p, X, delta_diag, a) + dbeta(alpha, (p/n)^v, (n/p)^v, log=TRUE)
-	} )
-plot(x, y)
+	y = sapply(x, function(alpha){
+		loglikelihood_large_p(alpha, n, p, X, delta_diag, a) + 2*dbeta(alpha, (p/n)^v, (n/p)^v, log=TRUE)
+		} )
+	plot(x, y)
 
 
 

@@ -101,11 +101,11 @@ devtools::reload("/Users/gabrielhoffman/workspace/repos/mvIC")
 
 
 ```{r basic}
-n = 20
+n = 50
 p = 300
 m_active = 1
 m_total = 10
-rho = .8
+rho = 0
 sigFrac = .5
 X = matrix(rnorm(m_total*n), n, m_total)
 colnames(X) = paste0('X_', 1:m_total)
@@ -115,7 +115,7 @@ beta = matrix(rnorm(p*m_active, 0, 10), m_active,p)
 eta = X[,1:m_active,drop=FALSE] %*% beta 
 
 trueModel = paste('Y ~', paste(colnames(X)[1:m_active], collapse=' + ')) 
-n_clusters = 50
+n_clusters = 5
 # changes correlation structure of noise. 
 clustID = sample.int(n_clusters, p, prob = dexp(1:n_clusters, .5), replace=TRUE)
 
@@ -138,16 +138,40 @@ fit = lm(as.formula(trueModel), data=as.data.frame(X))
 mvIC(fit, criterion = "BIC", shrink.method="EB")
 
 
+fit = lm(as.formula(trueModel), data=as.data.frame(X))
+res = mvIC:::estimate_covariance( t(mvIC:::getResids(fit)))
+lambda = res$lambda
 
-modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=3)
+
+modelSearch = bestSubsetSearch(Y, as.data.frame(X), colnames(X), maxk=3, lambda=lambda)
 
 modelSearch = data.table(modelSearch)
 df = modelSearch[,data.frame(rank = rank(score), isTrue = form==trueModel) ,by=c('method', 'criterion')]
 df[isTrue==TRUE,1:3]
 
+modelSearch[method=="EB" & criterion=="BIC",]
 
 
+fit = lm(Y ~ 1, data=as.data.frame(X))
+res = estimate_covariance( t(mvIC:::getResids(fit)))
+res
 
+lambda = res$lambda
+fit = lm(as.formula(trueModel), data=as.data.frame(X))
+R = t(mvIC:::getResids(fit))
+f_penalized_logLik( lambda, n, p, R)
+
+fit = lm(R ~ X_2, data=as.data.frame(X))
+R = t(mvIC:::getResids(fit))
+f_penalized_logLik( lambda, n, p, R)
+
+
+fit = lm(as.formula(trueModel), data=as.data.frame(X))
+estimate_covariance( t(mvIC:::getResids(fit)))
+
+
+fit = lm(Y ~ X_2, data=as.data.frame(X))
+estimate_covariance( t(mvIC:::getResids(fit)))
 
 
 
@@ -416,9 +440,9 @@ res = lapply( c(seq(10, 90, by=10), seq(100, 1100, by=50)), function(p){
   fit = lm(as.formula(trueModel), data=as.data.frame(X)) 
   residMatrix = mvIC:::getResids(fit)
 
-  tst1 = estimateMVN_EB( (t(residMatrix)), MAP=TRUE )
+  tst1 = mvIC:::estimateMVN_EB( (t(residMatrix)), MAP=TRUE )
   # tst2 = gcShrink(  t((t(residMatrix))), var=3, cor=1, plot=FALSE)
-  tst2 = eb_cov_est( (residMatrix))
+  tst2 = mvIC:::eb_cov_est( (residMatrix))
   tst3 = shrinkcovmat.unequal( residMatrix )
 
   SigTrue = as.matrix(Sigma)
@@ -471,7 +495,7 @@ library(TAS)
 
 set.seed(2)
    
-n_reps = 5
+n_reps = 1
 n = 50 # number of samples
 m_total = 10 # total number of variables
 n_clusters = 5
