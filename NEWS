@@ -1,6 +1,8 @@
+# v1.5.1  October 26, 2020
+	o enforce compatability with variancePartition >= 1.19.20
+
 # v1.5.0  May 5, 2020
 	o add back gdf
-
 
 # v1.4.0  May 1, 2020
 	o Add bestSubsetSearch()
