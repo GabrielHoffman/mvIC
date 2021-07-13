@@ -1,9 +1,10 @@
 # mvIC 1.6.0  
 ## Major changes
 July 13, 2021
+
 - add `fastApprox` argument that is exact for fixed effects and approximate if random effects are included
- - include `pcTransform()` function
- - this can be 100x faster for large datasets
+	 - include `pcTransform()` function
+	 - this can be 100x faster for large datasets
 - better estimate of lambda and logML 
 	- use `lambda = 0.01` by default
 - defaults are new `criterion = "BIC"`, `shrink.method = "EB"`, `nparamsMethod = "edf"`
