@@ -1,9 +1,11 @@
+# mvIC <img src="man/figures/mvIC_logo.png" align="right" alt="" width="120" />
 
-<div align="right">
+
+<!-- <div align="right">
 <img src="https://deepfigv.mssm.edu/img/software/mvIC/mvIC_logo.png" alt="mvIC logo" width="100px" 
   style="float:right;"><br>
 </div>
-
+ -->
 # Evaluate information criteria for multivariate model selection
 
 mvIC extends the standard the standard Akaike or Bayesian Information Criterion (AIC, BIC) to the case of multivariate regression.  The model fit across many response variables is evaluated and the criterion explicitly considers correlation between reponses.  mvIC is applicable to linear and linear mixed models.
