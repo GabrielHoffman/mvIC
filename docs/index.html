@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">mvIC</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.5.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.6.0</span>
       </span>
     </div>
 
@@ -45,6 +45,9 @@
 </li>
 <li>
   <a href="reference/index.html">Reference</a>
+</li>
+<li>
+  <a href="news/index.html">Changelog</a>
 </li>
       </ul>
 <ul class="nav navbar-nav navbar-right">
@@ -68,7 +71,7 @@
   <div class="contents col-md-9">
 
 <div align="right">
-<p><img src="https://deepfigv.mssm.edu/img/software/mvIC/mvIC_logo.png" alt="mvIC logo" width="100px"><br></p>
+<p><img src="https://deepfigv.mssm.edu/img/software/mvIC/mvIC_logo.png" alt="mvIC logo" width="100px" style="float:right;"><br></p>
 </div>
 <div id="evaluate-information-criteria-for-multivariate-model-selection" class="section level1">
 <div class="page-header"><h1 class="hasAnchor">
@@ -99,36 +102,46 @@
 <span class="va">fit2</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html">lm</a></span><span class="op">(</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">Sepal.Width</span>, <span class="va">Sepal.Length</span><span class="op">)</span> <span class="op">~</span> <span class="va">Petal.Width</span> <span class="op">+</span> <span class="va">Petal.Length</span> <span class="op">+</span> <span class="va">Species</span>, data<span class="op">=</span><span class="va">iris</span><span class="op">)</span>
 <span class="fu"><a href="reference/mvIC.html">mvIC</a></span><span class="op">(</span> <span class="va">fit2</span> <span class="op">)</span></code></pre></div>
 </div>
+<div id="multivariate-linear-mixed-model" class="section level4">
+<h4 class="hasAnchor">
+<a href="#multivariate-linear-mixed-model" class="anchor"></a>Multivariate linear mixed model</h4>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/lme4/lme4/">lme4</a></span><span class="op">)</span>
+<span class="co"># Predict Sepal width and Length given Species</span>
+<span class="co"># Evaluate model fits separately</span>
+<span class="va">fit1</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/lme4/man/lmer.html">lmer</a></span><span class="op">(</span> <span class="va">Sepal.Width</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Species</span><span class="op">)</span>, data<span class="op">=</span><span class="va">iris</span>, REML<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span>
+<span class="va">fit2</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/lme4/man/lmer.html">lmer</a></span><span class="op">(</span> <span class="va">Sepal.Length</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Species</span><span class="op">)</span>, data<span class="op">=</span><span class="va">iris</span>, REML<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span>
+<span class="va">score</span> <span class="op">=</span> <span class="fu"><a href="reference/mvIC.html">mvIC</a></span><span class="op">(</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">fit1</span>,<span class="va">fit2</span><span class="op">)</span> <span class="op">)</span>
+
+<span class="co"># Use mvIC_fit() to fit multivariate regression</span>
+<span class="co"># Combine responses on *rows*</span>
+<span class="va">Y</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html">with</a></span><span class="op">(</span><span class="va">iris</span>, <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">rbind</a></span><span class="op">(</span><span class="va">Sepal.Width</span>, <span class="va">Sepal.Length</span><span class="op">)</span><span class="op">)</span>
+ 
+<span class="co"># Evaluate multiple responses</span>
+<span class="co"># Can specify any formula of fixed or random effects</span>
+<span class="fu"><a href="reference/mvIC_fit.html">mvIC_fit</a></span><span class="op">(</span> <span class="va">Y</span>, <span class="op">~</span> <span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Species</span><span class="op">)</span>, data<span class="op">=</span><span class="va">iris</span><span class="op">)</span></code></pre></div>
+</div>
 <div id="forward-stepwise-regression" class="section level4">
 <h4 class="hasAnchor">
 <a href="#forward-stepwise-regression" class="anchor"></a>Forward stepwise regression</h4>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># Combine respones on *rows*</span>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Combine responses on *rows*</span>
 <span class="va">Y</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html">with</a></span><span class="op">(</span><span class="va">iris</span>, <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">rbind</a></span><span class="op">(</span><span class="va">Sepal.Width</span>, <span class="va">Sepal.Length</span><span class="op">)</span><span class="op">)</span>
 
 <span class="co"># variables to consider in the model</span>
-<span class="va">variables</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Petal.Length"</span>, <span class="st">"Petal.Width"</span>, <span class="st">"Species"</span><span class="op">)</span>
+<span class="va">variables</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Petal.Length"</span>, <span class="st">"Petal.Width"</span>, <span class="st">"(1|Species)"</span><span class="op">)</span>
 
 <span class="co"># fit forward stepwise regression starting with model: ~1. </span>
 <span class="va">bestModel</span> <span class="op">=</span> <span class="fu"><a href="reference/mvForwardStepwise.html">mvForwardStepwise</a></span><span class="op">(</span> <span class="va">Y</span>, <span class="op">~</span> <span class="fl">1</span>, data<span class="op">=</span><span class="va">iris</span>, variables<span class="op">=</span><span class="va">variables</span><span class="op">)</span></code></pre></div>
-<p>Categorical variables can be modeled as random effects using the <code>(1|x)</code> syntax.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># model Species as a random effect</span>
-<span class="va">variables</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Petal.Length"</span>, <span class="st">"Petal.Width"</span>, <span class="st">"(1|Species)"</span><span class="op">)</span>
-
-<span class="va">bestModel</span> <span class="op">=</span> <span class="fu"><a href="reference/mvForwardStepwise.html">mvForwardStepwise</a></span><span class="op">(</span> <span class="va">Y</span>, <span class="op">~</span> <span class="fl">1</span>, data<span class="op">=</span><span class="va">iris</span>, variables<span class="op">=</span><span class="va">variables</span><span class="op">)</span></code></pre></div>
-<p>If a random effect is specified, a linear mixed model is fit and the number of parameter equal to the effective degrees of freedom of the model fit. Note that using a linear mixed model is more computationally demanding, but</p>
+<p>Categorical variables can be modeled as random effects using the <code>(1|x)</code> syntax. If a random effect is specified, a linear mixed model is fit and the number of parameter equal to the effective degrees of freedom of the model fit. Note that using a linear mixed model is more computationally demanding, but</p>
 <ul>
 <li>prevents overcorrection with variables with many categories</li>
 <li>regularizes the effect of estimate for each category</li>
 <li>gracefully handles colinearity between categorical variables</li>
 </ul>
+<!--## Documentation
+See [manual](http://deepfigv.mssm.edu/img/software/mvIC/mvIC-manual.pdf) for examples and documentation.-->
 </div>
-</div>
-<div id="documentation" class="section level2">
-<h2 class="hasAnchor">
-<a href="#documentation" class="anchor"></a>Documentation</h2>
-<p>See <a href="http://deepfigv.mssm.edu/img/software/mvIC/mvIC-manual.pdf">manual</a> for examples and documentation.</p>
 </div>
 </div>
 
@@ -151,7 +164,7 @@
 <div class="developers">
 <h2>Developers</h2>
 <ul class="list-unstyled">
-<li>Gabriel E. Hoffman <br><small class="roles"> Maintainer </small>  </li>
+<li>Gabriel Hoffman <br><small class="roles"> Author, maintainer </small>  </li>
 </ul>
 </div>
 
@@ -160,7 +173,7 @@
 
 
       <footer><div class="copyright">
-  <p>Developed by Gabriel E. Hoffman.</p>
+  <p>Developed by Gabriel Hoffman.</p>
 </div>
 
 <div class="pkgdown">

@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">mvIC</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.5.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.6.0</span>
       </span>
     </div>
 
@@ -86,6 +86,9 @@
 </li>
 <li>
   <a href="../reference/index.html">Reference</a>
+</li>
+<li>
+  <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -122,10 +125,11 @@
   <span class='va'>baseFormula</span>,
   <span class='va'>data</span>,
   <span class='va'>variables</span>,
-  criterion <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"sum BIC"</span>, <span class='st'>"AIC"</span>, <span class='st'>"BIC"</span>, <span class='st'>"AICC"</span>, <span class='st'>"CAIC"</span>, <span class='st'>"sum AIC"</span><span class='op'>)</span>,
-  shrink.method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"none"</span>, <span class='st'>"var_equal"</span>, <span class='st'>"var_unequal"</span>, <span class='st'>"EB"</span><span class='op'>)</span>,
+  criterion <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"BIC"</span>, <span class='st'>"sum BIC"</span>, <span class='st'>"AIC"</span>, <span class='st'>"AICC"</span>, <span class='st'>"CAIC"</span>, <span class='st'>"sum AIC"</span><span class='op'>)</span>,
+  shrink.method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"EB"</span>, <span class='st'>"none"</span>, <span class='st'>"var_equal"</span>, <span class='st'>"var_unequal"</span><span class='op'>)</span>,
   nparamsMethod <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"edf"</span>, <span class='st'>"countLevels"</span>, <span class='st'>"lme4"</span><span class='op'>)</span>,
   deltaCutoff <span class='op'>=</span> <span class='fl'>5</span>,
+  fastApprox <span class='op'>=</span> <span class='cn'>FALSE</span>,
   verbose <span class='op'>=</span> <span class='cn'>TRUE</span>,
   <span class='va'>...</span>
 <span class='op'>)</span></pre>
@@ -151,7 +155,7 @@
     </tr>
     <tr>
       <th>criterion</th>
-      <td><p>multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')</p></td>
+      <td><p>multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')</p></td>
     </tr>
     <tr>
       <th>shrink.method</th>
@@ -164,6 +168,10 @@
     <tr>
       <th>deltaCutoff</th>
       <td><p>stop interating of the model improvement is less than deltaCutoff. default is 5</p></td>
+    </tr>
+    <tr>
+      <th>fastApprox</th>
+      <td><p>use PCA to transform variables and substantially decrease compute time.  This approach is exact when only fixed effects are used, and approximate when random effects are included.</p></td>
     </tr>
     <tr>
       <th>verbose</th>
@@ -186,16 +194,16 @@
 <span class='co'># fit forward stepwise regression starting with model: ~1. </span>
 <span class='va'>bestModel</span> <span class='op'>=</span> <span class='fu'>mvForwardStepwise</span><span class='op'>(</span> <span class='va'>Y</span>, <span class='op'>~</span> <span class='fl'>1</span>, data<span class='op'>=</span><span class='va'>iris</span>, variables<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>iris</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>3</span><span class='op'>:</span><span class='fl'>5</span><span class='op'>]</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; <span class='message'>Base model: ~ 1</span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Petal.Length                   </span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Petal.Width                   </span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Species                   </span></div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Best model delta: -234</span></div><div class='output co'>#&gt; <span class='message'>Add variable to model: Petal.Length</span></div><div class='output co'>#&gt; <span class='message'>Base model: ~ 1 + Petal.Length</span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Petal.Width                   </span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Species                   </span></div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Best model delta: -107</span></div><div class='output co'>#&gt; <span class='message'>Add variable to model: Species</span></div><div class='output co'>#&gt; <span class='message'>Base model: ~ 1 + Petal.Length + Species</span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Petal.Width                   </span></div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Best model delta: -10</span></div><div class='output co'>#&gt; <span class='message'>Add variable to model: Petal.Width</span></div><div class='input'>
+#&gt; <span class='message'>Best model delta: -293</span></div><div class='output co'>#&gt; <span class='message'>Add variable to model: Petal.Length</span></div><div class='output co'>#&gt; <span class='message'>Base model: ~ 1 + Petal.Length</span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Petal.Width                   </span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Species                   </span></div><div class='output co'>#&gt; <span class='message'></span>
+#&gt; <span class='message'>Best model delta: -73</span></div><div class='output co'>#&gt; <span class='message'>Add variable to model: Species</span></div><div class='output co'>#&gt; <span class='message'>Base model: ~ 1 + Petal.Length + Species</span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Petal.Width                   </span></div><div class='output co'>#&gt; <span class='message'></span>
+#&gt; <span class='message'>Best model delta: -15</span></div><div class='output co'>#&gt; <span class='message'>Add variable to model: Petal.Width</span></div><div class='input'>
 <span class='va'>bestModel</span>
 </div><div class='output co'>#&gt; 		Multivariate IC forward stepwise regression
 #&gt; 
 #&gt;   Samples:	 150 
 #&gt;   Responses:	 2 
-#&gt;   Shrink method: none 
-#&gt;   Criterion:	 sum BIC 
+#&gt;   Shrink method: EB 
+#&gt;   Criterion:	 BIC 
 #&gt;   Iterations:	 3 
 #&gt; 
 #&gt;   Best model: ~ 1 + Petal.Length + Species + Petal.Width 
@@ -212,7 +220,7 @@
 
       <footer>
       <div class="copyright">
-  <p>Developed by Gabriel E. Hoffman.</p>
+  <p>Developed by Gabriel Hoffman.</p>
 </div>
 
 <div class="pkgdown">

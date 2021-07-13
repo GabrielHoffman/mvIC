@@ -79,7 +79,7 @@ TJ Wu, P Chen, Y Yan. The weighted average information criterion for multivariat
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">mvIC</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.5.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.6.0</span>
       </span>
     </div>
 
@@ -93,6 +93,9 @@ TJ Wu, P Chen, Y Yan. The weighted average information criterion for multivariat
 </li>
 <li>
   <a href="../reference/index.html">Reference</a>
+</li>
+<li>
+  <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -133,8 +136,8 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
 
     <pre class="usage"><span class='fu'>mvIC</span><span class='op'>(</span>
   <span class='va'>fitList</span>,
-  criterion <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"sum BIC"</span>, <span class='st'>"AIC"</span>, <span class='st'>"BIC"</span>, <span class='st'>"AICC"</span>, <span class='st'>"CAIC"</span>, <span class='st'>"sum AIC"</span><span class='op'>)</span>,
-  shrink.method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"none"</span>, <span class='st'>"var_equal"</span>, <span class='st'>"var_unequal"</span>, <span class='st'>"EB"</span><span class='op'>)</span>,
+  criterion <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"BIC"</span>, <span class='st'>"sum BIC"</span>, <span class='st'>"AIC"</span>, <span class='st'>"AICC"</span>, <span class='st'>"CAIC"</span>, <span class='st'>"sum AIC"</span><span class='op'>)</span>,
+  shrink.method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"EB"</span>, <span class='st'>"none"</span>, <span class='st'>"var_equal"</span>, <span class='st'>"var_unequal"</span><span class='op'>)</span>,
   nparamsMethod <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"edf"</span>, <span class='st'>"countLevels"</span>, <span class='st'>"lme4"</span><span class='op'>)</span>,
   <span class='va'>...</span>
 <span class='op'>)</span></pre>
@@ -144,11 +147,11 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>fitList</th>
-      <td><p>list of model fits with <code><a href='https://rdrr.io/r/stats/lm.html'>lm()</a></code> or <code>lmer()</code>.  All models must have same data, response and formula.</p></td>
+      <td><p>list of model fits with <code><a href='https://rdrr.io/r/stats/lm.html'>lm()</a></code> or <code><a href='https://rdrr.io/pkg/lme4/man/lmer.html'>lmer()</a></code>.  All models must have same data, response and formula.</p></td>
     </tr>
     <tr>
       <th>criterion</th>
-      <td><p>multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')</p></td>
+      <td><p>multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')</p></td>
     </tr>
     <tr>
       <th>shrink.method</th>
@@ -181,12 +184,12 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
 #&gt;   Samples:	 150 
 #&gt;   Responses:	 2 
 #&gt;   Coef param:	 4 
-#&gt;   Cov param:	 NA 
-#&gt;   Regression:	 naive 
-#&gt;   Shrink method: none 
-#&gt;   lambda:	 NA 
-#&gt;   Criterion:	 sum BIC 
-#&gt;   Score:	 -489.0935 
+#&gt;   Cov param:	 3 
+#&gt;   Regression:	 lm 
+#&gt;   Shrink method: EB 
+#&gt;   lambda:	 0.01 
+#&gt;   Criterion:	 BIC 
+#&gt;   Score:	 334.3684 
 #&gt; </div><div class='input'>
 <span class='co'># add Petal width and length</span>
 <span class='co'># smaller mvIC means better model</span>
@@ -197,12 +200,12 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
 #&gt;   Samples:	 150 
 #&gt;   Responses:	 2 
 #&gt;   Coef param:	 6 
-#&gt;   Cov param:	 NA 
-#&gt;   Regression:	 naive 
-#&gt;   Shrink method: none 
-#&gt;   lambda:	 NA 
-#&gt;   Criterion:	 sum BIC 
-#&gt;   Score:	 -639.5817 
+#&gt;   Cov param:	 3 
+#&gt;   Regression:	 lm 
+#&gt;   Shrink method: EB 
+#&gt;   lambda:	 0.01 
+#&gt;   Criterion:	 BIC 
+#&gt;   Score:	 202.3143 
 #&gt; </div><div class='input'>
 </div></pre>
   </div>
@@ -216,7 +219,7 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
 
       <footer>
       <div class="copyright">
-  <p>Developed by Gabriel E. Hoffman.</p>
+  <p>Developed by Gabriel Hoffman.</p>
 </div>
 
 <div class="pkgdown">

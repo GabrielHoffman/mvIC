@@ -7,8 +7,8 @@
 mvIC_from_residuals(
   residMatrix,
   m,
-  criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"),
-  shrink.method = c("none", "var_equal", "var_unequal", "EB"),
+  criterion = c("BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"),
+  shrink.method = c("EB", "none", "var_equal", "var_unequal"),
   ...
 )
 }
@@ -17,7 +17,7 @@ mvIC_from_residuals(
 
 \item{m}{number of parameters for each model}
 
-\item{criterion}{multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')}
+\item{criterion}{multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')}
 
 \item{shrink.method}{Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses}
 

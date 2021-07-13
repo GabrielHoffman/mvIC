@@ -9,10 +9,11 @@ mvForwardStepwise(
   baseFormula,
   data,
   variables,
-  criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"),
-  shrink.method = c("none", "var_equal", "var_unequal", "EB"),
+  criterion = c("BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"),
+  shrink.method = c("EB", "none", "var_equal", "var_unequal"),
   nparamsMethod = c("edf", "countLevels", "lme4"),
   deltaCutoff = 5,
+  fastApprox = FALSE,
   verbose = TRUE,
   ...
 )
@@ -26,13 +27,15 @@ mvForwardStepwise(
 
 \item{variables}{array of variable names to be considered in the regression.  If variable should be considered as random effect, use '(1|A)'.}
 
-\item{criterion}{multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')}
+\item{criterion}{multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')}
 
 \item{shrink.method}{Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses}
 
 \item{nparamsMethod}{"edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}}
 
 \item{deltaCutoff}{stop interating of the model improvement is less than deltaCutoff. default is 5}
+
+\item{fastApprox}{use PCA to transform variables and substantially decrease compute time.  This approach is exact when only fixed effects are used, and approximate when random effects are included.}
 
 \item{verbose}{Default TRUE. Print messages}
 

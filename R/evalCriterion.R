@@ -9,10 +9,11 @@
 #' @param baseFormula specifies baseline variables for the linear (mixed) model.  Must only specify covariates, since the rows of exprObj are automatically used as a response. e.g.: \code{~ a + b + (1|c)} Formulas with only fixed effects also work, and \code{lmFit()} followed by \code{contrasts.fit()} are run.
 #' @param data data.frame with columns corresponding to formula
 #' @param variables array of variable names to be considered in the regression.  If variable should be considered as random effect, use '(1|A)'.
-#' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')
+#' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')
 #' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
 #' @param deltaCutoff stop interating of the model improvement is less than deltaCutoff. default is 5 
+#' @param fastApprox use PCA to transform variables and substantially decrease compute time.  This approach is exact when only fixed effects are used, and approximate when random effects are included.
 #' @param verbose Default TRUE. Print messages
 #' @param ... additional arguements passed to logDet
 #' 
@@ -30,7 +31,7 @@
 #' @importFrom stats as.formula
 #' @importFrom dplyr as_tibble
 #' @export
-mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "none", "var_equal", "var_unequal", "EB"), nparamsMethod = c("edf", "countLevels", "lme4"), deltaCutoff = 5, verbose=TRUE,...  ){
+mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "EB", "none", "var_equal", "var_unequal"), nparamsMethod = c("edf", "countLevels", "lme4"), deltaCutoff = 5, fastApprox = FALSE, verbose=TRUE,...  ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -44,7 +45,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 
 	# score base model
 	suppressWarnings({
-	baseScore = mvIC_fit( exprObj, baseFormula, data, criterion=criterion, shrink.method=shrink.method , nparamsMethod=nparamsMethod, verbose=FALSE,...)
+	baseScore = mvIC_fit( exprObj, baseFormula, data, criterion=criterion, shrink.method=shrink.method, nparamsMethod=nparamsMethod, verbose=FALSE, fastApprox=fastApprox,...)
 	})
 
 	resTrace = data.frame(	iter 		= 0,
@@ -72,7 +73,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 
 			suppressWarnings({
 			# evaluate multivariate score
-			mvIC_fit( exprObj, form, data, criterion=criterion, shrink.method=shrink.method, nparamsMethod=nparamsMethod, verbose=FALSE, ...)
+			mvIC_fit( exprObj, form, data, criterion=criterion, shrink.method=shrink.method, nparamsMethod=nparamsMethod, verbose=FALSE, fastApprox=fastApprox, ...)
 			})
 			})
 
@@ -82,7 +83,6 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 		# get difference between best and second best score
 		delta = as.numeric(score[[i]] - baseScore)
 		if( verbose ) message("\nBest model delta: ", format(delta, digits=2))	
-
 
 		isBest = rep("", length(score))
 		isAdded = rep("", length(score))	
@@ -156,9 +156,10 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 #' @param exprObj matrix of expression data (g genes x n samples), or ExpressionSet, or EList returned by voom() from the limma package
 #' @param formula specifies variables for the linear (mixed) model.  Must only specify covariates, since the rows of exprObj are automatically used as a response. e.g.: \code{~ a + b + (1|c)} Formulas with only fixed effects also work, and \code{lmFit()} followed by \code{contrasts.fit()} are run.
 #' @param data data.frame with columns corresponding to formula
-#' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')
+#' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')
 #' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
+#' @param fastApprox use PCA to transform variables and substantially decrease compute time.  This approach is exact when only fixed effects are used, and approximate when random effects are included
 #' @param verbose Default TRUE. Print messages
 #' @param ... additional arguements passed to logDet
 #'
@@ -168,12 +169,13 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 #' For one response the standard penalty is \eqn{log(n)*m}, this just adds a \eqn{log(n)} to that value, but only the differences between two models is important.  Estimating the \eqn{p x p} covariance matrix requires \eqn{0.5*p*(p+1)} parameters.
 #' When \eqn{p > m} the residual covariance matrix Sigma is not full rank.  In this case the psudo-determinant is used instead.
 #'
-#' See References
-#'
-#' Pauler, DK. The Schwarz criterion and related methods for normal linear models. Biometrika (1998), 85, 1, pp. 13-27
-#' #' Edward J. Bedrick and Chih-Ling Tsai. Model Selection for Multivariate Regression in Small Samples.  Biometrics,  50:1 1994 226-231
-#'
-#' TJ Wu, P Chen, Y Yan. The weighted average information criterion for multivariate regression model selection. Signal Processing 93.1 (2013): 49-55.
+#' @references{
+#'   \insertRef{pauler1998schwarz}{mvIC}
+#' 
+#'   \insertRef{bedrick1994model}{mvIC}
+#' 
+#'   \insertRef{wu2013weighted}{mvIC}
+#' }
 #'
 #' @return multivariate BIC value
 #' @examples
@@ -188,10 +190,10 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 #' # smaller mvIC means better model
 #' mvIC_fit( Y, ~ Petal.Width + Petal.Length + Species, data=iris)
 #' 
-#' @import variancePartition 
+#' @import variancePartition Rdpack
 #'
 #' @export
-mvIC_fit = function( exprObj, formula, data, criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "none", "var_equal", "var_unequal", "EB"), nparamsMethod = c("edf", "countLevels", "lme4"), verbose=FALSE, ... ){
+mvIC_fit = function( exprObj, formula, data, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "EB", "none", "var_equal", "var_unequal"), nparamsMethod = c("edf", "countLevels", "lme4"), fastApprox = FALSE, verbose=FALSE,... ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -203,7 +205,16 @@ mvIC_fit = function( exprObj, formula, data, criterion = c("sum BIC", "AIC", "BI
 	}
 
 	# scale features (i.e. rows)
-	exprObj = scale_features( exprObj )
+	# exprObj = scale_features( exprObj )
+
+	# if fastApprox or if only fixed effects
+	if( fastApprox || ! .isMixedModelFormula(formula) ){
+		if( is(exprObj, "matrix") ){
+			exprObj = t(pcTransform(t(exprObj)))
+		}else{
+			exprObj = t(pcTransform(t(exprObj$E)))
+		}
+	}
 
 	# fit model and compute residuals
 	suppressWarnings({
@@ -211,23 +222,29 @@ mvIC_fit = function( exprObj, formula, data, criterion = c("sum BIC", "AIC", "BI
 	})
 
 	# extract residuals
-	residMatrix = residuals( modelFit, modelFit )
+	residMatrix = residuals( modelFit )
 
 	# effect fixed 
 	if( modelFit$method == "ls"){		
 	   	m <- ncol(coef(modelFit)) + 1
 	}else{
 
-		if( nparamsMethod == "edf" ){
-		    k = min(100, nrow(exprObj))
-		}else{
-			k = 1
-		}
+		# effective number of parameters is returned by dream
+		m = sum(attr(modelFit, "edf")) 
+		attr(m,"nparamsMethod") = "edf"
 
-		fitList = fitVarPartModel( exprObj[seq_len(k),,drop=FALSE], formula, data, showWarnings=FALSE, quiet=!verbose)
+		# sapply( fitList, function(fit) sum(hatvalues(fit)) )
 
-		# get number of parameters
-		m <- nparam( fitList, nparamsMethod=nparamsMethod)
+		# if( nparamsMethod == "edf" ){
+		#     k = min(100, nrow(exprObj))
+		# }else{
+		# 	k = 1
+		# }
+
+		# fitList = fitVarPartModel( exprObj[seq_len(k),,drop=FALSE], formula, data, showWarnings=FALSE, quiet=!verbose)
+
+		# # get number of parameters
+		# m <- nparam( fitList, nparamsMethod=nparamsMethod)
 	}
 	
 	mvIC_from_residuals( residMatrix, m, criterion=criterion, shrink.method=shrink.method,... )
@@ -297,10 +314,10 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 	if( is(object, "list") & nparamsMethod == "edf" ){
 
 		if( all(sapply(object, function(fit) is(fit, "merMod"))) ){
-			# if object is a list of merMod fits, compute the mean effective degrees of freedom
-			# this is more stable than code below using edf of just one model
-			m = mean(sapply( object, function(fit) sum(hatvalues(fit)) )) + 1
-			nparamsMethod = "already estimated"
+			# Sum of effective degrees of freedom across all responses
+			m = sum(sapply( object, function(fit) sum(hatvalues(fit))))
+			attr(m, "nparamsMethod") = "edf"
+			return(m)
 		}
 	}
 
@@ -323,7 +340,7 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 		m = switch( nparamsMethod, 
 			# effective degrees of freedom
 			# Add term for residual variance
-			"edf" = sum(hatvalues(object)) + 1,
+			"edf" = sum(hatvalues(object)),
 
 	   	 	# fixed + number of random levels
 			"countLevels" = length(object@beta) + object@devcomp[["dims"]][['q']] + object@devcomp[["dims"]][["useSc"]],
@@ -349,7 +366,7 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 #' Evaluate multivariate BIC from a list of regression fits
 #'
 #' @param fitList list of model fits with \code{lm()} or \code{lmer()}.  All models must have same data, response and formula.
-#' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')
+#' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')
 #' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
 #' @param ... additional arguements passed to logDet
@@ -382,7 +399,7 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 #' 
 #' @importFrom methods is
 #' @export
-mvIC = function( fitList, criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "none", "var_equal", "var_unequal", "EB"), nparamsMethod = c("edf", "countLevels", "lme4"), ...){
+mvIC = function( fitList, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "EB", "none", "var_equal", "var_unequal"), nparamsMethod = c("edf", "countLevels", "lme4"), ...){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -405,12 +422,12 @@ mvIC = function( fitList, criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC",
 #' 
 #' @param residMatrix matrix of residuals where rows are features
 #' @param m number of parameters for each model
-#' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')
+#' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')
 #' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
 #' @param ... other arguments passed to logDet
 #' 
 #' @importFrom methods new
-mvIC_from_residuals = function( residMatrix, m, criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "none", "var_equal", "var_unequal", "EB"), ... ){
+mvIC_from_residuals = function( residMatrix, m, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "EB", "none", "var_equal", "var_unequal"), ... ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -431,17 +448,15 @@ mvIC_from_residuals = function( residMatrix, m, criterion = c("sum BIC", "AIC", 
 		if( shrink.method == "EB"){
 
 			# responses are *rows*
-			res = eb_cov_est( t(residMatrix) )
-			# res = eb_cov_est2( t(residMatrix) )
-			# res = eb_cov_est3( t(residMatrix) )
-			# res = estimateMVN_EB( t(residMatrix) )
-			lambda = res$alpha
+			res = eclairs(t(residMatrix), lambda = 0.01)
+			lambda = res$lambda
 
 			# b = beam::beam(t(residMatrix), verbose=FALSE)
 			# lambda = b@alphaOpt
 			# res = list(logLik = b@valOpt)
 
-            dataTerm = -2*res$logLik            
+            # dataTerm = -2*res$logLik 
+            dataTerm = -2*res$logML             
 			gdf_cov = p + (1-lambda)*p*(p-1)/2
 
 		}else{
@@ -600,7 +615,10 @@ setMethod("show", "mvIC_result", function( object ){
 	print( object )
 })
 
-
+#' @importFrom lme4 findbars
+.isMixedModelFormula = function(formula){
+    !is.null(findbars(as.formula(formula)))
+}
 
 
 

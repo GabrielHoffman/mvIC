@@ -8,9 +8,10 @@ mvIC_fit(
   exprObj,
   formula,
   data,
-  criterion = c("sum BIC", "AIC", "BIC", "AICC", "CAIC", "sum AIC"),
-  shrink.method = c("none", "var_equal", "var_unequal", "EB"),
+  criterion = c("BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"),
+  shrink.method = c("EB", "none", "var_equal", "var_unequal"),
   nparamsMethod = c("edf", "countLevels", "lme4"),
+  fastApprox = FALSE,
   verbose = FALSE,
   ...
 )
@@ -22,11 +23,13 @@ mvIC_fit(
 
 \item{data}{data.frame with columns corresponding to formula}
 
-\item{criterion}{multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')}
+\item{criterion}{multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')}
 
 \item{shrink.method}{Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses}
 
 \item{nparamsMethod}{"edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}}
+
+\item{fastApprox}{use PCA to transform variables and substantially decrease compute time.  This approach is exact when only fixed effects are used, and approximate when random effects are included}
 
 \item{verbose}{Default TRUE. Print messages}
 
@@ -40,13 +43,6 @@ Evaluate multivariate BIC while considering correlation between response variabl
 where \eqn{\Sigma} is the residual covariance matrix.  This formula extends the standard univariate BIC to the multivariate case.  
 For one response the standard penalty is \eqn{log(n)*m}, this just adds a \eqn{log(n)} to that value, but only the differences between two models is important.  Estimating the \eqn{p x p} covariance matrix requires \eqn{0.5*p*(p+1)} parameters.
 When \eqn{p > m} the residual covariance matrix Sigma is not full rank.  In this case the psudo-determinant is used instead.
-
-See References
-
-Pauler, DK. The Schwarz criterion and related methods for normal linear models. Biometrika (1998), 85, 1, pp. 13-27
-#' Edward J. Bedrick and Chih-Ling Tsai. Model Selection for Multivariate Regression in Small Samples.  Biometrics,  50:1 1994 226-231
-
-TJ Wu, P Chen, Y Yan. The weighted average information criterion for multivariate regression model selection. Signal Processing 93.1 (2013): 49-55.
 }
 \details{
 Evaluate multivariate BIC on matrix of response variables.  Smaller is better.
@@ -63,4 +59,13 @@ mvIC_fit( Y, ~ Species, data=iris)
 # smaller mvIC means better model
 mvIC_fit( Y, ~ Petal.Width + Petal.Length + Species, data=iris)
 
+}
+\references{
+{
+  \insertRef{pauler1998schwarz}{mvIC}
+
+  \insertRef{bedrick1994model}{mvIC}
+
+  \insertRef{wu2013weighted}{mvIC}
+}
 }

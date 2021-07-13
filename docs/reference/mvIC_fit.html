@@ -43,11 +43,7 @@
 <meta property="og:description" content="Evaluate multivariate BIC while considering correlation between response variables. For n samples, p responses and m parameters for each model, evaluate the multivariate BIC as $$n * logDet(\Sigma) + log(n) * (p*m + 0.5*p*(p+1))$$
 where \(\Sigma\) is the residual covariance matrix.  This formula extends the standard univariate BIC to the multivariate case.  
 For one response the standard penalty is \(log(n)*m\), this just adds a \(log(n)\) to that value, but only the differences between two models is important.  Estimating the \(p x p\) covariance matrix requires \(0.5*p*(p+1)\) parameters.
-When \(p &amp;gt; m\) the residual covariance matrix Sigma is not full rank.  In this case the psudo-determinant is used instead.
-See References
-Pauler, DK. The Schwarz criterion and related methods for normal linear models. Biometrika (1998), 85, 1, pp. 13-27
-#' Edward J. Bedrick and Chih-Ling Tsai. Model Selection for Multivariate Regression in Small Samples.  Biometrics,  50:1 1994 226-231
-TJ Wu, P Chen, Y Yan. The weighted average information criterion for multivariate regression model selection. Signal Processing 93.1 (2013): 49-55." />
+When \(p &amp;gt; m\) the residual covariance matrix Sigma is not full rank.  In this case the psudo-determinant is used instead." />
 
 
 
@@ -79,7 +75,7 @@ TJ Wu, P Chen, Y Yan. The weighted average information criterion for multivariat
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">mvIC</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.5.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.6.0</span>
       </span>
     </div>
 
@@ -93,6 +89,9 @@ TJ Wu, P Chen, Y Yan. The weighted average information criterion for multivariat
 </li>
 <li>
   <a href="../reference/index.html">Reference</a>
+</li>
+<li>
+  <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -125,19 +124,16 @@ TJ Wu, P Chen, Y Yan. The weighted average information criterion for multivariat
 where \(\Sigma\) is the residual covariance matrix.  This formula extends the standard univariate BIC to the multivariate case.  
 For one response the standard penalty is \(log(n)*m\), this just adds a \(log(n)\) to that value, but only the differences between two models is important.  Estimating the \(p x p\) covariance matrix requires \(0.5*p*(p+1)\) parameters.
 When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In this case the psudo-determinant is used instead.</p>
-<p>See References</p>
-<p>Pauler, DK. The Schwarz criterion and related methods for normal linear models. Biometrika (1998), 85, 1, pp. 13-27
-#' Edward J. Bedrick and Chih-Ling Tsai. Model Selection for Multivariate Regression in Small Samples.  Biometrics,  50:1 1994 226-231</p>
-<p>TJ Wu, P Chen, Y Yan. The weighted average information criterion for multivariate regression model selection. Signal Processing 93.1 (2013): 49-55.</p>
     </div>
 
     <pre class="usage"><span class='fu'>mvIC_fit</span><span class='op'>(</span>
   <span class='va'>exprObj</span>,
   <span class='va'>formula</span>,
   <span class='va'>data</span>,
-  criterion <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"sum BIC"</span>, <span class='st'>"AIC"</span>, <span class='st'>"BIC"</span>, <span class='st'>"AICC"</span>, <span class='st'>"CAIC"</span>, <span class='st'>"sum AIC"</span><span class='op'>)</span>,
-  shrink.method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"none"</span>, <span class='st'>"var_equal"</span>, <span class='st'>"var_unequal"</span>, <span class='st'>"EB"</span><span class='op'>)</span>,
+  criterion <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"BIC"</span>, <span class='st'>"sum BIC"</span>, <span class='st'>"AIC"</span>, <span class='st'>"AICC"</span>, <span class='st'>"CAIC"</span>, <span class='st'>"sum AIC"</span><span class='op'>)</span>,
+  shrink.method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"EB"</span>, <span class='st'>"none"</span>, <span class='st'>"var_equal"</span>, <span class='st'>"var_unequal"</span><span class='op'>)</span>,
   nparamsMethod <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"edf"</span>, <span class='st'>"countLevels"</span>, <span class='st'>"lme4"</span><span class='op'>)</span>,
+  fastApprox <span class='op'>=</span> <span class='cn'>FALSE</span>,
   verbose <span class='op'>=</span> <span class='cn'>FALSE</span>,
   <span class='va'>...</span>
 <span class='op'>)</span></pre>
@@ -159,7 +155,7 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
     </tr>
     <tr>
       <th>criterion</th>
-      <td><p>multivariate criterion ('AIC', 'BIC') or summing score assumign independence of reponses ('sum AIC', 'sum BIC')</p></td>
+      <td><p>multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')</p></td>
     </tr>
     <tr>
       <th>shrink.method</th>
@@ -168,6 +164,10 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
     <tr>
       <th>nparamsMethod</th>
       <td><p>"edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in <code><a href='nparam.html'>nparam</a></code></p></td>
+    </tr>
+    <tr>
+      <th>fastApprox</th>
+      <td><p>use PCA to transform variables and substantially decrease compute time.  This approach is exact when only fixed effects are used, and approximate when random effects are included</p></td>
     </tr>
     <tr>
       <th>verbose</th>
@@ -185,6 +185,15 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>Evaluate multivariate BIC on matrix of response variables.  Smaller is better.</p>
+    <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
+
+    <p>Pauler DK (1998).
+&#8220;The Schwarz criterion and related methods for normal linear models.&#8221;
+<em>Biometrika</em>, <b>85</b>(1), 13--27.  Bedrick EJ, Tsai C (1994).
+&#8220;Model selection for multivariate regression in small samples.&#8221;
+<em>Biometrics</em>, 226--231.  Wu T, Chen P, Yan Y (2013).
+&#8220;The weighted average information criterion for multivariate regression model selection.&#8221;
+<em>Signal Processing</em>, <b>93</b>(1), 49--55.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
@@ -198,12 +207,12 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
 #&gt;   Samples:	 150 
 #&gt;   Responses:	 2 
 #&gt;   Coef param:	 4 
-#&gt;   Cov param:	 NA 
-#&gt;   Regression:	 naive 
-#&gt;   Shrink method: none 
-#&gt;   lambda:	 NA 
-#&gt;   Criterion:	 sum BIC 
-#&gt;   Score:	 -183.3689 
+#&gt;   Cov param:	 3 
+#&gt;   Regression:	 lm 
+#&gt;   Shrink method: EB 
+#&gt;   lambda:	 0.01 
+#&gt;   Criterion:	 BIC 
+#&gt;   Score:	 334.3684 
 #&gt; </div><div class='input'>
 <span class='co'># Evaluate model 2</span>
 <span class='co'># smaller mvIC means better model</span>
@@ -213,12 +222,12 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
 #&gt;   Samples:	 150 
 #&gt;   Responses:	 2 
 #&gt;   Coef param:	 6 
-#&gt;   Cov param:	 NA 
-#&gt;   Regression:	 naive 
-#&gt;   Shrink method: none 
-#&gt;   lambda:	 NA 
-#&gt;   Criterion:	 sum BIC 
-#&gt;   Score:	 -333.8571 
+#&gt;   Cov param:	 3 
+#&gt;   Regression:	 lm 
+#&gt;   Shrink method: EB 
+#&gt;   lambda:	 0.01 
+#&gt;   Criterion:	 BIC 
+#&gt;   Score:	 202.3143 
 #&gt; </div><div class='input'>
 </div></pre>
   </div>
@@ -232,7 +241,7 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
 
       <footer>
       <div class="copyright">
-  <p>Developed by Gabriel E. Hoffman.</p>
+  <p>Developed by Gabriel Hoffman.</p>
 </div>
 
 <div class="pkgdown">
