@@ -22,6 +22,8 @@ mvIC_from_residuals(
 
 \item{shrink.method}{Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses}
 
+\item{p_original}{number of features in original data}
+
 \item{...}{other arguments passed to logDet}
 }
 \description{

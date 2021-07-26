@@ -430,6 +430,7 @@ mvIC = function( fitList, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC"
 #' @param m number of parameters for each model
 #' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')
 #' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
+#' @param p_original number of features in original data
 #' @param ... other arguments passed to logDet
 #' 
 #' @importFrom methods new

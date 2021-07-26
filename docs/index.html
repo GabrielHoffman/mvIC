@@ -38,7 +38,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">mvIC</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.6.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.6.1</span>
       </span>
     </div>
 
@@ -149,7 +149,7 @@
 <span class="va">bestModel</span> <span class="op">=</span> <span class="fu"><a href="reference/mvForwardStepwise.html">mvForwardStepwise</a></span><span class="op">(</span> <span class="va">Y</span>, <span class="op">~</span> <span class="fl">1</span>, data<span class="op">=</span><span class="va">iris</span>, variables<span class="op">=</span><span class="va">variables</span><span class="op">)</span></code></pre></div>
 <p>Categorical variables can be modeled as random effects using the <code>(1|x)</code> syntax. If a random effect is specified, a linear mixed model is fit and the number of parameter equal to the effective degrees of freedom of the model fit. Note that using a linear mixed model is more computationally demanding, but</p>
 <ul>
-<li>prevents overcorrection with variables with many categories</li>
+<li>prevents over-correction with variables with many categories</li>
 <li>regularizes the effect of estimate for each category</li>
 <li>gracefully handles colinearity between categorical variables</li>
 </ul>

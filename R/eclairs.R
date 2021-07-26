@@ -70,6 +70,7 @@ setMethod("print", 'eclairs',
 # @param center center columns of X (default: TRUE) 
 # @param scale scale columns of X (default: TRUE) 
 #' @param warmStart result of previous SVD to initialize values
+#' @param p number of features of current or original data set following SVD.
 #'
 #' @return \link{eclairs} object storing:
 #' \itemize{

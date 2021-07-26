@@ -2,19 +2,19 @@
 July 26, 2021
 
 - fix bug in calculating effective degrees of freedom: 
- - report m = mean edf per response
- - for fixed effect, now report m instead of m + 1
+   - report m = mean edf per response
+   - for fixed effect, now report `m` instead of `m + 1`
 - Add more unit tests
-- pcTransform() varFrac is 1 but default
--  when criterion = "BIC", shrink = "EB" and n > p, fastApprox is exact with only fixed effects, but approximate with random effects
- - with p > n use original value of p in eclairs to calculate logML
+- in `pcTransform()` `varFrac` is 1 but default
+-  when `criterion = "BIC"`, `shrink = "EB"` and `n > p`, fastApprox is exact with only fixed effects, but approximate with random effects
+   - with `p > n` use original value of `p` in `eclairs()` to calculate logML
 
 # mvIC 1.6.0  
 ## Major changes
 July 13, 2021
 
 - add `fastApprox` argument that is exact for fixed effects and approximate if random effects are included
-	 - include `pcTransform()` function
+   - include `pcTransform()` function
 	 - this can be 100x faster for large datasets
 - better estimate of lambda and logML 
 	- use `lambda = 0.01` by default

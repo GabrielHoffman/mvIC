@@ -47,7 +47,7 @@
 
 
 <meta property="og:title" content="Number of parameters in model — nparam" />
-<meta property="og:description" content="In the case of lm(), the result is the number of coefficients, + 1 for the variance term.  For a linear mixed model fit with lmer() there are 3 options.  &quot;edf&quot;: effective degrees of freedom as computed by sum of diagonal values of the hat matrix return by lmer() . &quot;countLevels&quot;, returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. &quot;lme4&quot;, returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize." />
+<meta property="og:description" content="In the case of lm(), the result is the number of coefficients  For a linear mixed model fit with lmer() there are 3 options.  &quot;edf&quot;: effective degrees of freedom as computed by sum of diagonal values of the hat matrix return by lmer() . &quot;countLevels&quot;, returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. &quot;lme4&quot;, returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize." />
 <meta property="og:image" content="/logo.svg" />
 
 
@@ -80,7 +80,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">mvIC</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.6.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.6.1</span>
       </span>
     </div>
 
@@ -125,7 +125,7 @@
     </div>
 
     <div class="ref-description">
-    <p>In the case of <code><a href='https://rdrr.io/r/stats/lm.html'>lm()</a></code>, the result is the number of coefficients, + 1 for the variance term.  For a linear mixed model fit with <code><a href='https://rdrr.io/pkg/lme4/man/lmer.html'>lmer()</a></code> there are 3 options.  "edf": effective degrees of freedom as computed by sum of diagonal values of the hat matrix return by <code><a href='https://rdrr.io/pkg/lme4/man/lmer.html'>lmer()</a></code> . "countLevels", returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. "lme4", returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize.</p>
+    <p>In the case of <code><a href='https://rdrr.io/r/stats/lm.html'>lm()</a></code>, the result is the number of coefficients  For a linear mixed model fit with <code><a href='https://rdrr.io/pkg/lme4/man/lmer.html'>lmer()</a></code> there are 3 options.  "edf": effective degrees of freedom as computed by sum of diagonal values of the hat matrix return by <code><a href='https://rdrr.io/pkg/lme4/man/lmer.html'>lmer()</a></code> . "countLevels", returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. "lme4", returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize.</p>
     </div>
 
     <pre class="usage"><span class='fu'>nparam</span><span class='op'>(</span><span class='va'>object</span>, nparamsMethod <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"edf"</span>, <span class='st'>"countLevels"</span>, <span class='st'>"lme4"</span><span class='op'>)</span><span class='op'>)</span></pre>

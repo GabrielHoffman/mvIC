@@ -79,7 +79,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">mvIC</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.6.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.6.1</span>
       </span>
     </div>
 
@@ -122,6 +122,27 @@
       <small>Source: <a href='https://github.com/GabrielHoffman/mvIC/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
+    <div id="mvic-161" class="section level1">
+<h1 class="page-header" data-toc-text="1.6.1">
+<a href="#mvic-161" class="anchor"></a>mvIC 1.6.1</h1>
+<p>July 26, 2021</p>
+<ul>
+<li>fix bug in calculating effective degrees of freedom:
+<ul>
+<li>report m = mean edf per response</li>
+<li>for fixed effect, now report <code>m</code> instead of <code>m + 1</code>
+</li>
+</ul>
+</li>
+<li>Add more unit tests</li>
+<li>in <code><a href="../reference/pcTransform.html">pcTransform()</a></code> <code>varFrac</code> is 1 but default</li>
+<li>when <code>criterion = "BIC"</code>, <code>shrink = "EB"</code> and <code>n &gt; p</code>, fastApprox is exact with only fixed effects, but approximate with random effects
+<ul>
+<li>with <code>p &gt; n</code> use original value of <code>p</code> in <code><a href="../reference/eclairs.html">eclairs()</a></code> to calculate logML</li>
+</ul>
+</li>
+</ul>
+</div>
     <div id="mvic-160" class="section level1">
 <h1 class="page-header" data-toc-text="1.6.0">
 <a href="#mvic-160" class="anchor"></a>mvIC 1.6.0</h1>
@@ -132,8 +153,11 @@
 <ul>
 <li>add <code>fastApprox</code> argument that is exact for fixed effects and approximate if random effects are included
 <ul>
-<li>include <code><a href="../reference/pcTransform.html">pcTransform()</a></code> function</li>
+<li>include <code><a href="../reference/pcTransform.html">pcTransform()</a></code> function
+<ul>
 <li>this can be 100x faster for large datasets</li>
+</ul>
+</li>
 </ul>
 </li>
 <li>better estimate of lambda and logML
