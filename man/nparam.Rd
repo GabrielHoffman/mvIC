@@ -15,7 +15,7 @@ nparam(object, nparamsMethod = c("edf", "countLevels", "lme4"))
 number of parameters
 }
 \description{
-In the case of \code{lm()}, the result is the number of coefficients, + 1 for the variance term.  For a linear mixed model fit with \code{lmer()} there are 3 options.  "edf": effective degrees of freedom as computed by sum of diagonal values of the hat matrix return by \code{lmer()} . "countLevels", returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. "lme4", returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize.
+In the case of \code{lm()}, the result is the number of coefficients  For a linear mixed model fit with \code{lmer()} there are 3 options.  "edf": effective degrees of freedom as computed by sum of diagonal values of the hat matrix return by \code{lmer()} . "countLevels", returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. "lme4", returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize.
 }
 \details{
 Number of parameters in model from \code{lm()} or \code{lmer()}

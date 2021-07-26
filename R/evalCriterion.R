@@ -82,7 +82,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 
 		# get difference between best and second best score
 		delta = as.numeric(score[[i]] - baseScore)
-		if( verbose ) message("\nBest model delta: ", format(delta, digits=2))	
+		if( verbose ) message("\nBest model delta: ", format(delta, nsmall=1, digits=1))	
 
 		isBest = rep("", length(score))
 		isAdded = rep("", length(score))	
@@ -204,11 +204,8 @@ mvIC_fit = function( exprObj, formula, data, criterion = c( "BIC", "sum BIC", "A
 		data = as.data.frame(data, stringsAsFactors=FALSE)
 	}
 
-	# scale features (i.e. rows)
-	# exprObj = scale_features( exprObj )
-
-	# if fastApprox or if only fixed effects
-	if( fastApprox || ! .isMixedModelFormula(formula) ){
+	# if fastApprox 
+	if( fastApprox ){ 
 		if( is(exprObj, "matrix") ){
 			exprObj = t(pcTransform(t(exprObj)))
 		}else{
@@ -226,11 +223,11 @@ mvIC_fit = function( exprObj, formula, data, criterion = c( "BIC", "sum BIC", "A
 
 	# effect fixed 
 	if( modelFit$method == "ls"){		
-	   	m <- ncol(coef(modelFit)) + 1
+	   	m <- ncol(coef(modelFit)) #+ 1
 	}else{
 
 		# effective number of parameters is returned by dream
-		m = sum(attr(modelFit, "edf")) 
+		m = mean(attr(modelFit, "edf")) 
 		attr(m,"nparamsMethod") = "edf"
 
 		# sapply( fitList, function(fit) sum(hatvalues(fit)) )
@@ -289,7 +286,7 @@ getResids = function(fitList){
 	}else if(is(fitList, "mlm")){
 		residMatrix = t(residuals( fitList))
 	}else{
-		residMatrix = t(t(residuals(fitList)))
+		residMatrix = t(residuals(fitList))
 	}
 	residMatrix
 }
@@ -302,7 +299,8 @@ getResids = function(fitList){
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
 #'
 #' @description 
-#' In the case of \code{lm()}, the result is the number of coefficients, + 1 for the variance term.  For a linear mixed model fit with \code{lmer()} there are 3 options.  "edf": effective degrees of freedom as computed by sum of diagonal values of the hat matrix return by \code{lmer()} . "countLevels", returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. "lme4", returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize. 
+#' In the case of \code{lm()}, the result is the number of coefficients  For a linear mixed model fit with \code{lmer()} there are 3 options.  "edf": effective degrees of freedom as computed by sum of diagonal values of the hat matrix return by \code{lmer()} . "countLevels", returns the number of fixed effects + number of levels in random effects + 1 for residual variance term.  This treats each level of a random effect as a parameter. "lme4", returns number of fixed effects + number of variance components.  Here a random effect with 10 levels is only counted as 1 parameter.  This tends to underpenalize. 
+# , + 1 for the variance term.
 #' @return number of parameters
 #' @importFrom stats coef
 #' @importFrom methods is
@@ -314,8 +312,8 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 	if( is(object, "list") & nparamsMethod == "edf" ){
 
 		if( all(sapply(object, function(fit) is(fit, "merMod"))) ){
-			# Sum of effective degrees of freedom across all responses
-			m = sum(sapply( object, function(fit) sum(hatvalues(fit))))
+			# mean of effective degrees of freedom across all responses
+			m = mean(sapply( object, function(fit) sum(hatvalues(fit))))
 			attr(m, "nparamsMethod") = "edf"
 			return(m)
 		}
@@ -330,10 +328,10 @@ nparam = function( object, nparamsMethod = c("edf", "countLevels", "lme4")){
 	if( is(object, "mlm") ){
 		# must be evaluated first because if object is 'mlm', it is also 'lm'
 		# need 'mlm' to take presidence
-		m = nrow(coef(object)) + 1
+		m = nrow(coef(object)) #+ 1
 		attr(m, "nparamsMethod") = "lm"
 	}else if( is(object, "lm") ){
-		m = length(coef(object)) + 1
+		m = length(coef(object)) #+ 1
 		attr(m, "nparamsMethod") = "lm"
 	}else if( is(object, "merMod") ){
 
@@ -456,7 +454,7 @@ mvIC_from_residuals = function( residMatrix, m, criterion = c( "BIC", "sum BIC",
 			# res = list(logLik = b@valOpt)
 
             # dataTerm = -2*res$logLik 
-            dataTerm = -2*res$logML             
+			dataTerm = -2*res$logML             
 			gdf_cov = p + (1-lambda)*p*(p-1)/2
 
 		}else{

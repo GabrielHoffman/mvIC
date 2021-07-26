@@ -1,3 +1,12 @@
+# mvIC 1.6.1
+July 26, 2021
+
+- fix bug in calculating effective degrees of freedom: 
+ - report m = mean edf per response
+ - for fixed effect, now report m instead of m + 1
+- Add more unit tests
+- pcTransform() varFrac is 1 but default
+
 # mvIC 1.6.0  
 ## Major changes
 July 13, 2021

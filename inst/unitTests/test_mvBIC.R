@@ -3,29 +3,24 @@
 
 # The values of BIC and evalCriterion are different
 # but the *difference* in values for two models are the same
-# test_mvBIC = function(){
+test_mvBIC = function(){
 
-# 	# library(RUnit)
+	# library(RUnit)
 
-# 	n = 100
-# 	p = 3
+	fit1 <- lm(dist ~ 1, cars)
+	fit2 = lm(dist ~ speed, cars)
 
-# 	X = matrix(rnorm(n*p),n,p)
-# 	a = rnorm(n)
-# 	y = X %*% rep(1,p) + rnorm(n)
+	# standard R functions
+	a = BIC(fit2) - BIC(fit1)
 
-# 	fit1 = lm( y ~ X)
-# 	fit2 = lm( y ~ X + a)
+	# mvIC: compare two models
+	b = as.numeric(mvIC(fit2)) - as.numeric(mvIC(fit1))
 
-# 	diff1 = BIC(fit2) - BIC(fit1)
-# 	diff2 = evalCriterion( fit2) - evalCriterion( fit1)
-
-# 	checkEqualsNumeric( diff1, diff2)
-# }
+	checkEqualsNumeric( a, b)
+}
 
 
-library(mvIC)
-library(RUnit)
+
 
 
 test_multiple_mbBIC_fixed = function(){

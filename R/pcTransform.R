@@ -8,10 +8,14 @@
 #' @param X data matrix
 #' @param varFrac fraction of variance to retain
 #' @export
-pcTransform = function(X, varFrac = 0.95){
+pcTransform = function(X, varFrac = 1){
 
-	# SVD after mean centering columns
-	dcmp = svd(scale(X, scale=FALSE))
+	if( ncol(X) == 1){
+		return(X)
+	}
+
+	# SVD
+	dcmp = svd(X)
 
 	# if the number of columns is larger then nrow/5, 
 	# then truncate spectrum

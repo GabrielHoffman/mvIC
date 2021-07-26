@@ -4,7 +4,7 @@
 \alias{pcTransform}
 \title{PC transformation}
 \usage{
-pcTransform(X, varFrac = 0.95)
+pcTransform(X, varFrac = 1)
 }
 \arguments{
 \item{X}{data matrix}
