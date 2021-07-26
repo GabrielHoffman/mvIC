@@ -9,6 +9,7 @@ mvIC_from_residuals(
   m,
   criterion = c("BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"),
   shrink.method = c("EB", "none", "var_equal", "var_unequal"),
+  p_original = NULL,
   ...
 )
 }

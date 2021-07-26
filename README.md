@@ -70,7 +70,7 @@ bestModel = mvForwardStepwise( Y, ~ 1, data=iris, variables=variables)
 
 Categorical variables can be modeled as random effects using the `(1|x)` syntax. If a random effect is specified, a linear mixed model is fit and the number of parameter equal to the effective degrees of freedom of the model fit.  Note that using a linear mixed model is more computationally demanding, but 
 
-- prevents overcorrection with variables with many categories
+- prevents over-correction with variables with many categories
 - regularizes the effect of estimate for each category
 - gracefully handles colinearity between categorical variables
 

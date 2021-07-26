@@ -9,7 +9,8 @@ eclairs(
   k,
   lambda = NULL,
   compute = c("covariance", "correlation"),
-  warmStart = NULL
+  warmStart = NULL,
+  p = nrow(X)
 )
 }
 \arguments{

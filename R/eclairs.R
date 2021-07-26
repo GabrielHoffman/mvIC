@@ -95,7 +95,7 @@ setMethod("print", 'eclairs',
 #' @importFrom methods new
 #'
 # @export
-eclairs = function(X, k, lambda=NULL, compute=c("covariance", "correlation"), warmStart=NULL){
+eclairs = function(X, k, lambda=NULL, compute=c("covariance", "correlation"), warmStart=NULL, p = nrow(X)){
 
 	stopifnot(is.matrix(X))
 	compute = match.arg(compute)
@@ -107,8 +107,7 @@ eclairs = function(X, k, lambda=NULL, compute=c("covariance", "correlation"), wa
 		}
 	}
 
-	n = nrow(X)
-	p = ncol(X)
+	n = nrow(X)	
 
 	# save row and columns names since X is overwritten
 	rn = rownames(X)

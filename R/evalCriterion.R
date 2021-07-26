@@ -206,6 +206,8 @@ mvIC_fit = function( exprObj, formula, data, criterion = c( "BIC", "sum BIC", "A
 
 	# if fastApprox 
 	if( fastApprox ){ 
+		# get original number of features before reduction
+		p_original = nrow(exprObj)
 		if( is(exprObj, "matrix") ){
 			exprObj = t(pcTransform(t(exprObj)))
 		}else{
@@ -244,7 +246,13 @@ mvIC_fit = function( exprObj, formula, data, criterion = c( "BIC", "sum BIC", "A
 		# m <- nparam( fitList, nparamsMethod=nparamsMethod)
 	}
 	
-	mvIC_from_residuals( residMatrix, m, criterion=criterion, shrink.method=shrink.method,... )
+	if( fastApprox ){ 
+		res = mvIC_from_residuals( residMatrix, m, criterion=criterion, shrink.method=shrink.method, p_original = p_original,... )
+	}else{		
+		res = mvIC_from_residuals( residMatrix, m, criterion=criterion, shrink.method=shrink.method,... )
+	}
+
+	res
 }	
 
 
@@ -425,7 +433,7 @@ mvIC = function( fitList, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC"
 #' @param ... other arguments passed to logDet
 #' 
 #' @importFrom methods new
-mvIC_from_residuals = function( residMatrix, m, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "EB", "none", "var_equal", "var_unequal"), ... ){
+mvIC_from_residuals = function( residMatrix, m, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "EB", "none", "var_equal", "var_unequal"), p_original = NULL, ... ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -445,8 +453,10 @@ mvIC_from_residuals = function( residMatrix, m, criterion = c( "BIC", "sum BIC",
 
 		if( shrink.method == "EB"){
 
+			if( is.null(p_original)) p_original = p
+
 			# responses are *rows*
-			res = eclairs(t(residMatrix), lambda = 0.01)
+			res = eclairs(t(residMatrix), lambda = 0.01, p=p_original)
 			lambda = res$lambda
 
 			# b = beam::beam(t(residMatrix), verbose=FALSE)

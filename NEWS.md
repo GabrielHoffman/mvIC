@@ -6,6 +6,8 @@ July 26, 2021
  - for fixed effect, now report m instead of m + 1
 - Add more unit tests
 - pcTransform() varFrac is 1 but default
+-  when criterion = "BIC", shrink = "EB" and n > p, fastApprox is exact with only fixed effects, but approximate with random effects
+ - with p > n use original value of p in eclairs to calculate logML
 
 # mvIC 1.6.0  
 ## Major changes
