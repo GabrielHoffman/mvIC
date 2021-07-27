@@ -4,9 +4,9 @@
 scale_features = function(obj){
 
 	if( is(obj, "EList") ){
-		obj$E = t(scale(t(obj$E)))
+		obj$E = t(scale(t(obj$E), center=FALSE))
 	}else{		
-		obj = t(scale(t(obj)))
+		obj = t(scale(t(obj), center=FALSE))
 	}
 
 	obj
