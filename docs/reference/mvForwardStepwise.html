@@ -137,7 +137,7 @@
   shrink.method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"EB"</span>, <span class='st'>"none"</span>, <span class='st'>"var_equal"</span>, <span class='st'>"var_unequal"</span><span class='op'>)</span>,
   nparamsMethod <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"edf"</span>, <span class='st'>"countLevels"</span>, <span class='st'>"lme4"</span><span class='op'>)</span>,
   deltaCutoff <span class='op'>=</span> <span class='fl'>5</span>,
-  fastApprox <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  pca <span class='op'>=</span> <span class='cn'>TRUE</span>,
   verbose <span class='op'>=</span> <span class='cn'>TRUE</span>,
   <span class='va'>...</span>
 <span class='op'>)</span></pre>
@@ -178,8 +178,8 @@
       <td><p>stop interating of the model improvement is less than deltaCutoff. default is 5</p></td>
     </tr>
     <tr>
-      <th>fastApprox</th>
-      <td><p>use PCA to transform variables and substantially decrease compute time.  This approach is exact when only fixed effects are used, and approximate when random effects are included.</p></td>
+      <th>pca</th>
+      <td><p>use PCA to transform variables</p></td>
     </tr>
     <tr>
       <th>verbose</th>
@@ -202,9 +202,9 @@
 <span class='co'># fit forward stepwise regression starting with model: ~1. </span>
 <span class='va'>bestModel</span> <span class='op'>=</span> <span class='fu'>mvForwardStepwise</span><span class='op'>(</span> <span class='va'>Y</span>, <span class='op'>~</span> <span class='fl'>1</span>, data<span class='op'>=</span><span class='va'>iris</span>, variables<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span><span class='op'>(</span><span class='va'>iris</span><span class='op'>)</span><span class='op'>[</span><span class='fl'>3</span><span class='op'>:</span><span class='fl'>5</span><span class='op'>]</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; <span class='message'>Base model: ~ 1</span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Petal.Length                   </span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Petal.Width                   </span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Species                   </span></div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Best model delta: -293.4</span></div><div class='output co'>#&gt; <span class='message'>Add variable to model: Petal.Length</span></div><div class='output co'>#&gt; <span class='message'>Base model: ~ 1 + Petal.Length</span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Petal.Width                   </span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Species                   </span></div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Best model delta: -72.8</span></div><div class='output co'>#&gt; <span class='message'>Add variable to model: Species</span></div><div class='output co'>#&gt; <span class='message'>Base model: ~ 1 + Petal.Length + Species</span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Petal.Width                   </span></div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Best model delta: -14.7</span></div><div class='output co'>#&gt; <span class='message'>Add variable to model: Petal.Width</span></div><div class='input'>
+#&gt; <span class='message'>Best model delta: -292.3</span></div><div class='output co'>#&gt; <span class='message'>Add variable to model: Petal.Length</span></div><div class='output co'>#&gt; <span class='message'>Base model: ~ 1 + Petal.Length</span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Petal.Width                   </span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Species                   </span></div><div class='output co'>#&gt; <span class='message'></span>
+#&gt; <span class='message'>Best model delta: -106.7</span></div><div class='output co'>#&gt; <span class='message'>Add variable to model: Species</span></div><div class='output co'>#&gt; <span class='message'>Base model: ~ 1 + Petal.Length + Species</span></div><div class='output co'>#&gt; <span class='message'>	evaluating: + Petal.Width                   </span></div><div class='output co'>#&gt; <span class='message'></span>
+#&gt; <span class='message'>Best model delta: -8.1</span></div><div class='output co'>#&gt; <span class='message'>Add variable to model: Petal.Width</span></div><div class='input'>
 <span class='va'>bestModel</span>
 </div><div class='output co'>#&gt; 		Multivariate IC forward stepwise regression
 #&gt; 

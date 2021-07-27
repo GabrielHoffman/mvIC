@@ -141,7 +141,7 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
   criterion <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"BIC"</span>, <span class='st'>"sum BIC"</span>, <span class='st'>"AIC"</span>, <span class='st'>"AICC"</span>, <span class='st'>"CAIC"</span>, <span class='st'>"sum AIC"</span><span class='op'>)</span>,
   shrink.method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"EB"</span>, <span class='st'>"none"</span>, <span class='st'>"var_equal"</span>, <span class='st'>"var_unequal"</span><span class='op'>)</span>,
   nparamsMethod <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"edf"</span>, <span class='st'>"countLevels"</span>, <span class='st'>"lme4"</span><span class='op'>)</span>,
-  fastApprox <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  pca <span class='op'>=</span> <span class='cn'>TRUE</span>,
   verbose <span class='op'>=</span> <span class='cn'>FALSE</span>,
   <span class='va'>...</span>
 <span class='op'>)</span></pre>
@@ -174,8 +174,8 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
       <td><p>"edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in <code><a href='nparam.html'>nparam</a></code></p></td>
     </tr>
     <tr>
-      <th>fastApprox</th>
-      <td><p>use PCA to transform variables and substantially decrease compute time.  This approach is exact when only fixed effects are used, and approximate when random effects are included</p></td>
+      <th>pca</th>
+      <td><p>use PCA to transform variables</p></td>
     </tr>
     <tr>
       <th>verbose</th>
@@ -215,12 +215,12 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
 #&gt;   Samples:	 150 
 #&gt;   Responses:	 2 
 #&gt;   Coef param:	 3 
-#&gt;   Cov param:	 3 
+#&gt;   Cov param:	 2 
 #&gt;   Regression:	 lm 
 #&gt;   Shrink method: EB 
-#&gt;   lambda:	 0.01 
+#&gt;   lambda:	 1 
 #&gt;   Criterion:	 BIC 
-#&gt;   Score:	 324.3472 
+#&gt;   Score:	 389.4871 
 #&gt; </div><div class='input'>
 <span class='co'># Evaluate model 2</span>
 <span class='co'># smaller mvIC means better model</span>
@@ -230,12 +230,12 @@ When \(p &gt; m\) the residual covariance matrix Sigma is not full rank.  In thi
 #&gt;   Samples:	 150 
 #&gt;   Responses:	 2 
 #&gt;   Coef param:	 5 
-#&gt;   Cov param:	 3 
+#&gt;   Cov param:	 2 
 #&gt;   Regression:	 lm 
 #&gt;   Shrink method: EB 
-#&gt;   lambda:	 0.01 
+#&gt;   lambda:	 1 
 #&gt;   Criterion:	 BIC 
-#&gt;   Score:	 192.2931 
+#&gt;   Score:	 216.5552 
 #&gt; </div><div class='input'>
 </div></pre>
   </div>

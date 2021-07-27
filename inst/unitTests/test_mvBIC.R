@@ -180,7 +180,7 @@ test_check_accuray = function(){
 	beta = c(1,2,1)
 	Beta = matrix(beta, nrow=p, ncol=3)
 
-	Y = X[,1:3] %*% t(Beta) + matrix(rnorm(n*p), n,p)
+	Y = X[,1:3] %*% t(Beta) + matrix(rnorm(n*p), n,p)/3
 
 
 	Y = apply(Y, 2, function(x) x * rgamma(1,  1, 1e-3))

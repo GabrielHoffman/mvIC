@@ -133,7 +133,6 @@
   <span class='va'>m</span>,
   criterion <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"BIC"</span>, <span class='st'>"sum BIC"</span>, <span class='st'>"AIC"</span>, <span class='st'>"AICC"</span>, <span class='st'>"CAIC"</span>, <span class='st'>"sum AIC"</span><span class='op'>)</span>,
   shrink.method <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"EB"</span>, <span class='st'>"none"</span>, <span class='st'>"var_equal"</span>, <span class='st'>"var_unequal"</span><span class='op'>)</span>,
-  p_original <span class='op'>=</span> <span class='cn'>NULL</span>,
   <span class='va'>...</span>
 <span class='op'>)</span></pre>
 
@@ -155,10 +154,6 @@
     <tr>
       <th>shrink.method</th>
       <td><p>Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses</p></td>
-    </tr>
-    <tr>
-      <th>p_original</th>
-      <td><p>number of features in original data</p></td>
     </tr>
     <tr>
       <th>...</th>
