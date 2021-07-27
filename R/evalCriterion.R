@@ -206,8 +206,6 @@ mvIC_fit = function( exprObj, formula, data, criterion = c( "BIC", "sum BIC", "A
 
 	# if fastApprox 
 	if( fastApprox ){ 
-		# get original number of features before reduction
-		p_original = nrow(exprObj)
 		if( is(exprObj, "matrix") ){
 			exprObj = t(pcTransform(t(exprObj)))
 		}else{
@@ -246,13 +244,7 @@ mvIC_fit = function( exprObj, formula, data, criterion = c( "BIC", "sum BIC", "A
 		# m <- nparam( fitList, nparamsMethod=nparamsMethod)
 	}
 	
-	if( fastApprox ){ 
-		res = mvIC_from_residuals( residMatrix, m, criterion=criterion, shrink.method=shrink.method, p_original = p_original,... )
-	}else{		
-		res = mvIC_from_residuals( residMatrix, m, criterion=criterion, shrink.method=shrink.method,... )
-	}
-
-	res
+	mvIC_from_residuals( residMatrix, m, criterion=criterion, shrink.method=shrink.method,... )
 }	
 
 
@@ -454,10 +446,12 @@ mvIC_from_residuals = function( residMatrix, m, criterion = c( "BIC", "sum BIC",
 
 		if( shrink.method == "EB"){
 
-			if( is.null(p_original)) p_original = p
+			# if( is.null(p_original)) p_original = p
+
+			# est_param = shrinkcovmat.equal_lambda( residMatrix )
 
 			# responses are *rows*
-			res = eclairs(t(residMatrix), lambda = 0.01, p=p_original)
+			res = eclairs(t(residMatrix))#, lambda = 0.01, p=p_original)
 			lambda = res$lambda
 
 			# b = beam::beam(t(residMatrix), verbose=FALSE)

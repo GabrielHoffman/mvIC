@@ -20,7 +20,25 @@ test_mvBIC = function(){
 }
 
 
+test_compare = function(){
 
+	set.seed(1)
+	df_iris = data.frame(iris, test = rnorm(nrow(iris)))
+
+	fit1 = lm( cbind(Sepal.Width, Sepal.Length) ~ Species, data=df_iris)
+	score1 = mvIC( fit1 )
+
+	fit2 = lm( cbind(Sepal.Width, Sepal.Length) ~ Species + test, data=df_iris)
+	score2 = mvIC( fit2 )
+
+	d = as.numeric(score1) - as.numeric(score2)
+
+
+	Y = with(iris, t(cbind(Sepal.Width, Sepal.Length)))
+	res = mvForwardStepwise( Y, ~ Species, df_iris, variables= "test")
+
+	checkEqualsNumeric( res$trace$delta[2], -d)
+}
 
 
 test_multiple_mbBIC_fixed = function(){
