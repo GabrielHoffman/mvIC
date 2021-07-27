@@ -33,7 +33,6 @@ test_compare = function(){
 
 	d = as.numeric(score1) - as.numeric(score2)
 
-
 	Y = with(iris, t(cbind(Sepal.Width, Sepal.Length)))
 	res = mvForwardStepwise( Y, ~ Species, df_iris, variables= "test")
 

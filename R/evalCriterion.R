@@ -474,11 +474,17 @@ mvIC_from_residuals = function( residMatrix, m, criterion = c( "BIC", "sum BIC",
 
 		# see Yanagihara, et al. 2015
 		# doi:10.1214/15-EJS1022
+		# penalty = switch( criterion, 
+		# 				"AIC" 	= 2 * (p*(m-1) + gdf_cov),
+		# 				"BIC" 	= log(n) * (p*(m-1) + gdf_cov),
+		# 				"AICC"	= 2 * n*(p*(m-1) + gdf_cov) / (n-(m-1) - p - 1),
+		# 				"CAIC"	= (1+log(n)) * (p*(m-1) + gdf_cov))
+
 		penalty = switch( criterion, 
-						"AIC" 	= 2 * (p*(m-1) + gdf_cov),
-						"BIC" 	= log(n) * (p*(m-1) + gdf_cov),
-						"AICC"	= 2 * n*(p*(m-1) + gdf_cov) / (n-(m-1) - p - 1),
-						"CAIC"	= (1+log(n)) * (p*(m-1) + gdf_cov))
+						"AIC" 	= 2 * (p*m + gdf_cov),
+						"BIC" 	= log(n) * (p*m + gdf_cov),
+						"AICC"	= 2 * n*(p*m + gdf_cov) / (n-m - p - 1),
+						"CAIC"	= (1+log(n)) * (p*m + gdf_cov))
 
 		# retrun data term plus penalty
 		res = dataTerm + penalty

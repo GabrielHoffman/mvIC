@@ -70,7 +70,6 @@ setMethod("print", 'eclairs',
 # @param center center columns of X (default: TRUE) 
 # @param scale scale columns of X (default: TRUE) 
 #' @param warmStart result of previous SVD to initialize values
-#' @param p number of features of current or original data set following SVD.
 #'
 #' @return \link{eclairs} object storing:
 #' \itemize{
@@ -96,7 +95,7 @@ setMethod("print", 'eclairs',
 #' @importFrom methods new
 #'
 # @export
-eclairs = function(X, k, lambda=NULL, compute=c("covariance", "correlation"), warmStart=NULL, p = nrow(X)){
+eclairs = function(X, k, lambda=NULL, compute=c("covariance", "correlation"), warmStart=NULL){
 
 	stopifnot(is.matrix(X))
 	compute = match.arg(compute)
@@ -109,6 +108,7 @@ eclairs = function(X, k, lambda=NULL, compute=c("covariance", "correlation"), wa
 	}
 
 	n = nrow(X)	
+	p = ncol(X)
 
 	# save row and columns names since X is overwritten
 	rn = rownames(X)

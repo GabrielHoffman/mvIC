@@ -114,7 +114,7 @@ logML = function(delta, p, n, eigs, logdetD){
 # }
 
 #' @importFrom stats optimize
-getShrinkageValue = function(n, p, eigs, logdetD, minimum = 1e-4, lambda=NULL){
+getShrinkageValue = function(n, p, eigs, logdetD, minimum = 1e-7, lambda=NULL){
 
 	# if lambda is NULL, estimate it
 	if( is.null(lambda) ){
@@ -208,7 +208,7 @@ estimate_lambda_eb = function(ev, n, p, nu, lambda=NULL){
 	}
 
 	# estimate optimal lambda (i.e. alpha) value
-	getShrinkageValue(n, p, ev / nu, logdetD=2*p*log(sqrt(nu)), minimum = 1e-4, lambda=lambda)
+	getShrinkageValue(n, p, ev / nu, logdetD=2*p*log(sqrt(nu)), minimum = 1e-7, lambda=lambda)
 }
 
 

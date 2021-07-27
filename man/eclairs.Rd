@@ -9,8 +9,7 @@ eclairs(
   k,
   lambda = NULL,
   compute = c("covariance", "correlation"),
-  warmStart = NULL,
-  p = nrow(X)
+  warmStart = NULL
 )
 }
 \arguments{
@@ -23,8 +22,6 @@ eclairs(
 \item{compute}{compute the 'covariance' (default) or 'correlation'}
 
 \item{warmStart}{result of previous SVD to initialize values}
-
-\item{p}{number of features of current or original data set following SVD.}
 }
 \value{
 \link{eclairs} object storing:
