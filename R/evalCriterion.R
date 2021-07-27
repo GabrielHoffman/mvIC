@@ -13,7 +13,7 @@
 #' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
 #' @param deltaCutoff stop interating of the model improvement is less than deltaCutoff. default is 5 
-#' @param fastApprox use PCA to transform variables and substantially decrease compute time.  This approach is exact when only fixed effects are used, and approximate when random effects are included.
+#' @param pca use PCA to transform variables
 #' @param verbose Default TRUE. Print messages
 #' @param ... additional arguements passed to logDet
 #' 
@@ -31,7 +31,7 @@
 #' @importFrom stats as.formula
 #' @importFrom dplyr as_tibble
 #' @export
-mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "EB", "none", "var_equal", "var_unequal"), nparamsMethod = c("edf", "countLevels", "lme4"), deltaCutoff = 5, fastApprox = FALSE, verbose=TRUE,...  ){
+mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "EB", "none", "var_equal", "var_unequal"), nparamsMethod = c("edf", "countLevels", "lme4"), deltaCutoff = 5, pca = TRUE, verbose=TRUE,...  ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -43,9 +43,18 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 	}
 	data = droplevels(data)
 
+	# Apply PCA only once, instead of in each call to mvIC_fit
+	if( pca ){ 
+		if( is(exprObj, "matrix") ){
+			exprObj = t(pcTransform(t(exprObj)))
+		}else{
+			exprObj = t(pcTransform(t(exprObj$E)))
+		}
+	}
+
 	# score base model
 	suppressWarnings({
-	baseScore = mvIC_fit( exprObj, baseFormula, data, criterion=criterion, shrink.method=shrink.method, nparamsMethod=nparamsMethod, verbose=FALSE, fastApprox=fastApprox,...)
+	baseScore = mvIC_fit( exprObj, baseFormula, data, criterion=criterion, shrink.method=shrink.method, nparamsMethod=nparamsMethod, verbose=FALSE, pca=FALSE,...)
 	})
 
 	resTrace = data.frame(	iter 		= 0,
@@ -73,7 +82,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 
 			suppressWarnings({
 			# evaluate multivariate score
-			mvIC_fit( exprObj, form, data, criterion=criterion, shrink.method=shrink.method, nparamsMethod=nparamsMethod, verbose=FALSE, fastApprox=fastApprox, ...)
+			mvIC_fit( exprObj, form, data, criterion=criterion, shrink.method=shrink.method, nparamsMethod=nparamsMethod, verbose=FALSE, pca=FALSE, ...)
 			})
 			})
 
@@ -159,7 +168,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 #' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')
 #' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
 #' @param nparamsMethod "edf": effective degrees of freedom. "countLevels" count number of levels in each random effect.  "lme4" number of variance compinents, as used by lme4.  See description in \code{\link{nparam}}
-#' @param fastApprox use PCA to transform variables and substantially decrease compute time.  This approach is exact when only fixed effects are used, and approximate when random effects are included
+#' @param pca use PCA to transform variables
 #' @param verbose Default TRUE. Print messages
 #' @param ... additional arguements passed to logDet
 #'
@@ -193,7 +202,7 @@ mvForwardStepwise = function( exprObj, baseFormula, data, variables, criterion =
 #' @import variancePartition Rdpack
 #'
 #' @export
-mvIC_fit = function( exprObj, formula, data, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "EB", "none", "var_equal", "var_unequal"), nparamsMethod = c("edf", "countLevels", "lme4"), fastApprox = FALSE, verbose=FALSE,... ){
+mvIC_fit = function( exprObj, formula, data, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "EB", "none", "var_equal", "var_unequal"), nparamsMethod = c("edf", "countLevels", "lme4"), pca = TRUE, verbose=FALSE,... ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -204,8 +213,8 @@ mvIC_fit = function( exprObj, formula, data, criterion = c( "BIC", "sum BIC", "A
 		data = as.data.frame(data, stringsAsFactors=FALSE)
 	}
 
-	# if fastApprox 
-	if( fastApprox ){ 
+	# if pca 
+	if( pca ){ 
 		if( is(exprObj, "matrix") ){
 			exprObj = t(pcTransform(t(exprObj)))
 		}else{
@@ -229,19 +238,6 @@ mvIC_fit = function( exprObj, formula, data, criterion = c( "BIC", "sum BIC", "A
 		# effective number of parameters is returned by dream
 		m = mean(attr(modelFit, "edf")) 
 		attr(m,"nparamsMethod") = "edf"
-
-		# sapply( fitList, function(fit) sum(hatvalues(fit)) )
-
-		# if( nparamsMethod == "edf" ){
-		#     k = min(100, nrow(exprObj))
-		# }else{
-		# 	k = 1
-		# }
-
-		# fitList = fitVarPartModel( exprObj[seq_len(k),,drop=FALSE], formula, data, showWarnings=FALSE, quiet=!verbose)
-
-		# # get number of parameters
-		# m <- nparam( fitList, nparamsMethod=nparamsMethod)
 	}
 	
 	mvIC_from_residuals( residMatrix, m, criterion=criterion, shrink.method=shrink.method,... )
@@ -422,11 +418,10 @@ mvIC = function( fitList, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC"
 #' @param m number of parameters for each model
 #' @param criterion multivariate criterion ('AIC', 'BIC') or summing score assuming independence of reponses ('sum AIC', 'sum BIC')
 #' @param shrink.method Shrink covariance estimates to be positive definite. Using "var_equal" assumes all variance on the diagonal are equal.  This method is the fastest because it is linear time.  Using "var_unequal" allows each response to have its own variance term, however this method is quadratic time.  Using "none" does not apply shrinkge, but is only valid when there are very few responses
-#' @param p_original number of features in original data
 #' @param ... other arguments passed to logDet
 #' 
 #' @importFrom methods new
-mvIC_from_residuals = function( residMatrix, m, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "EB", "none", "var_equal", "var_unequal"), p_original = NULL, ... ){
+mvIC_from_residuals = function( residMatrix, m, criterion = c( "BIC", "sum BIC", "AIC", "AICC", "CAIC", "sum AIC"), shrink.method = c( "EB", "none", "var_equal", "var_unequal"), ... ){
 
 	criterion = match.arg(criterion)
 	shrink.method  = match.arg(shrink.method)
@@ -446,12 +441,10 @@ mvIC_from_residuals = function( residMatrix, m, criterion = c( "BIC", "sum BIC",
 
 		if( shrink.method == "EB"){
 
-			# if( is.null(p_original)) p_original = p
-
 			# est_param = shrinkcovmat.equal_lambda( residMatrix )
 
 			# responses are *rows*
-			res = eclairs(t(residMatrix))#, lambda = 0.01, p=p_original)
+			res = eclairs(t(residMatrix))
 			lambda = res$lambda
 
 			# b = beam::beam(t(residMatrix), verbose=FALSE)

@@ -6,8 +6,7 @@ July 26, 2021
    - for fixed effect, now report `m` instead of `m + 1`
 - Add more unit tests
 - in `pcTransform()` `varFrac` is 1 but default
--  when `criterion = "BIC"`, `shrink = "EB"` and `n > p`, fastApprox is exact with only fixed effects, but approximate with random effects
-   - with `p > n` use original value of `p` in `eclairs()` to calculate logML
+- enable `pca` by default, and compute it only once in `mvForwardStepwise()`
 
 # mvIC 1.6.0  
 ## Major changes

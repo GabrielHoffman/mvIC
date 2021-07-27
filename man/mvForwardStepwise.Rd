@@ -13,7 +13,7 @@ mvForwardStepwise(
   shrink.method = c("EB", "none", "var_equal", "var_unequal"),
   nparamsMethod = c("edf", "countLevels", "lme4"),
   deltaCutoff = 5,
-  fastApprox = FALSE,
+  pca = TRUE,
   verbose = TRUE,
   ...
 )
@@ -35,7 +35,7 @@ mvForwardStepwise(
 
 \item{deltaCutoff}{stop interating of the model improvement is less than deltaCutoff. default is 5}
 
-\item{fastApprox}{use PCA to transform variables and substantially decrease compute time.  This approach is exact when only fixed effects are used, and approximate when random effects are included.}
+\item{pca}{use PCA to transform variables}
 
 \item{verbose}{Default TRUE. Print messages}
 
