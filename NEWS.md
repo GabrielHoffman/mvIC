@@ -1,3 +1,7 @@
+# mvIC 1.6.2
+ - August 22, 2022
+ - remove dependency on PRIMME package
+
 # mvIC 1.6.1
 July 26, 2021
 

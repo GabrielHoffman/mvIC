@@ -26,6 +26,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -38,18 +40,12 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">mvIC</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.6.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.6.2</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
-<li>
-  <a href="index.html">
-    <span class="fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
 <li>
   <a href="reference/index.html">Reference</a>
 </li>
@@ -59,7 +55,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/GabrielHoffman/mvIC/">
+  <a href="https://github.com/GabrielHoffman/mvIC/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
      
   </a>
@@ -77,9 +73,8 @@
       </header><div class="row">
   <div class="contents col-md-9">
 
-<div id="mvic-" class="section level1">
-<div class="page-header"><h1 class="hasAnchor">
-<a href="#mvic-" class="anchor"></a>mvIC <img src="reference/figures/mvIC_logo.png" align="right" alt="" width="120">
+<div class="section level1">
+<div class="page-header"><h1 id="mvic-">mvIC <img src="reference/figures/mvIC_logo.png" align="right" alt="" width="120"><a class="anchor" aria-label="anchor" href="#mvic-"></a>
 </h1></div>
 <!-- <div align="right">
 <img src="https://deepfigv.mssm.edu/img/software/mvIC/mvIC_logo.png" alt="mvIC logo" width="100px" 
@@ -87,66 +82,66 @@
 </div>
  -->
 </div>
-<div id="evaluate-information-criteria-for-multivariate-model-selection" class="section level1">
-<h1 class="hasAnchor">
-<a href="#evaluate-information-criteria-for-multivariate-model-selection" class="anchor"></a>Evaluate information criteria for multivariate model selection</h1>
+<div class="section level1">
+<h1 id="evaluate-information-criteria-for-multivariate-model-selection">Evaluate information criteria for multivariate model selection<a class="anchor" aria-label="anchor" href="#evaluate-information-criteria-for-multivariate-model-selection"></a>
+</h1>
 <p>mvIC extends the standard the standard Akaike or Bayesian Information Criterion (AIC, BIC) to the case of multivariate regression. The model fit across many response variables is evaluated and the criterion explicitly considers correlation between reponses. mvIC is applicable to linear and linear mixed models.</p>
 <p>Forward stepwise regression with the mvIC criterion enables automated variable selection for high dimensional datasets.</p>
-<div id="installation" class="section level2">
-<h2 class="hasAnchor">
-<a href="#installation" class="anchor"></a>Installation</h2>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"GabrielHoffman/mvIC"</span>, repos<span class="op">=</span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/repositories.html">repositories</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<p>This automatically installs dependencies from <a href="https://bioconductor.org">Bioconductor</a></p>
+<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"GabrielHoffman/mvIC"</span>, repos<span class="op">=</span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/repositories.html" class="external-link">repositories</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>This automatically installs dependencies from <a href="https://bioconductor.org" class="external-link">Bioconductor</a></p>
 </div>
-<div id="examples" class="section level2">
-<h2 class="hasAnchor">
-<a href="#examples" class="anchor"></a>Examples</h2>
-<div id="multivariate-linear-model" class="section level4">
-<h4 class="hasAnchor">
-<a href="#multivariate-linear-model" class="anchor"></a>Multivariate linear model</h4>
+<div class="section level2">
+<h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
+</h2>
+<div class="section level4">
+<h4 id="multivariate-linear-model">Multivariate linear model<a class="anchor" aria-label="anchor" href="#multivariate-linear-model"></a>
+</h4>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># Predict Sepal width and Length given Species</span>
-<span class="co"># Evaluate model fit</span>
-<span class="va">fit1</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html">lm</a></span><span class="op">(</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">Sepal.Width</span>, <span class="va">Sepal.Length</span><span class="op">)</span> <span class="op">~</span> <span class="va">Species</span>, data<span class="op">=</span><span class="va">iris</span><span class="op">)</span>
-<span class="va">score</span> <span class="op">=</span> <span class="fu"><a href="reference/mvIC.html">mvIC</a></span><span class="op">(</span> <span class="va">fit1</span> <span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Predict Sepal width and Length given Species</span></span>
+<span><span class="co"># Evaluate model fit</span></span>
+<span><span class="va">fit1</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">Sepal.Width</span>, <span class="va">Sepal.Length</span><span class="op">)</span> <span class="op">~</span> <span class="va">Species</span>, data<span class="op">=</span><span class="va">iris</span><span class="op">)</span></span>
+<span><span class="va">score</span> <span class="op">=</span> <span class="fu"><a href="reference/mvIC.html">mvIC</a></span><span class="op">(</span> <span class="va">fit1</span> <span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># add Petal width and length</span>
-<span class="co"># smaller mvIC means better model</span>
-<span class="va">fit2</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html">lm</a></span><span class="op">(</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span><span class="op">(</span><span class="va">Sepal.Width</span>, <span class="va">Sepal.Length</span><span class="op">)</span> <span class="op">~</span> <span class="va">Petal.Width</span> <span class="op">+</span> <span class="va">Petal.Length</span> <span class="op">+</span> <span class="va">Species</span>, data<span class="op">=</span><span class="va">iris</span><span class="op">)</span>
-<span class="fu"><a href="reference/mvIC.html">mvIC</a></span><span class="op">(</span> <span class="va">fit2</span> <span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># add Petal width and length</span></span>
+<span><span class="co"># smaller mvIC means better model</span></span>
+<span><span class="va">fit2</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">Sepal.Width</span>, <span class="va">Sepal.Length</span><span class="op">)</span> <span class="op">~</span> <span class="va">Petal.Width</span> <span class="op">+</span> <span class="va">Petal.Length</span> <span class="op">+</span> <span class="va">Species</span>, data<span class="op">=</span><span class="va">iris</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/mvIC.html">mvIC</a></span><span class="op">(</span> <span class="va">fit2</span> <span class="op">)</span></span></code></pre></div>
 </div>
-<div id="multivariate-linear-mixed-model" class="section level4">
-<h4 class="hasAnchor">
-<a href="#multivariate-linear-mixed-model" class="anchor"></a>Multivariate linear mixed model</h4>
+<div class="section level4">
+<h4 id="multivariate-linear-mixed-model">Multivariate linear mixed model<a class="anchor" aria-label="anchor" href="#multivariate-linear-mixed-model"></a>
+</h4>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/lme4/lme4/">lme4</a></span><span class="op">)</span>
-<span class="co"># Predict Sepal width and Length given Species</span>
-<span class="co"># Evaluate model fits separately</span>
-<span class="va">fit1</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/lme4/man/lmer.html">lmer</a></span><span class="op">(</span> <span class="va">Sepal.Width</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Species</span><span class="op">)</span>, data<span class="op">=</span><span class="va">iris</span>, REML<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span>
-<span class="va">fit2</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/lme4/man/lmer.html">lmer</a></span><span class="op">(</span> <span class="va">Sepal.Length</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Species</span><span class="op">)</span>, data<span class="op">=</span><span class="va">iris</span>, REML<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span>
-<span class="va">score</span> <span class="op">=</span> <span class="fu"><a href="reference/mvIC.html">mvIC</a></span><span class="op">(</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">fit1</span>,<span class="va">fit2</span><span class="op">)</span> <span class="op">)</span>
-
-<span class="co"># Use mvIC_fit() to fit multivariate regression</span>
-<span class="co"># Combine responses on *rows*</span>
-<span class="va">Y</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html">with</a></span><span class="op">(</span><span class="va">iris</span>, <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">rbind</a></span><span class="op">(</span><span class="va">Sepal.Width</span>, <span class="va">Sepal.Length</span><span class="op">)</span><span class="op">)</span>
- 
-<span class="co"># Evaluate multiple responses</span>
-<span class="co"># Can specify any formula of fixed or random effects</span>
-<span class="fu"><a href="reference/mvIC_fit.html">mvIC_fit</a></span><span class="op">(</span> <span class="va">Y</span>, <span class="op">~</span> <span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Species</span><span class="op">)</span>, data<span class="op">=</span><span class="va">iris</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/lme4/lme4/" class="external-link">lme4</a></span><span class="op">)</span></span>
+<span><span class="co"># Predict Sepal width and Length given Species</span></span>
+<span><span class="co"># Evaluate model fits separately</span></span>
+<span><span class="va">fit1</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/lme4/man/lmer.html" class="external-link">lmer</a></span><span class="op">(</span> <span class="va">Sepal.Width</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Species</span><span class="op">)</span>, data<span class="op">=</span><span class="va">iris</span>, REML<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">fit2</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/lme4/man/lmer.html" class="external-link">lmer</a></span><span class="op">(</span> <span class="va">Sepal.Length</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Species</span><span class="op">)</span>, data<span class="op">=</span><span class="va">iris</span>, REML<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">score</span> <span class="op">=</span> <span class="fu"><a href="reference/mvIC.html">mvIC</a></span><span class="op">(</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">fit1</span>,<span class="va">fit2</span><span class="op">)</span> <span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Use mvIC_fit() to fit multivariate regression</span></span>
+<span><span class="co"># Combine responses on *rows*</span></span>
+<span><span class="va">Y</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">iris</span>, <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="va">Sepal.Width</span>, <span class="va">Sepal.Length</span><span class="op">)</span><span class="op">)</span></span>
+<span> </span>
+<span><span class="co"># Evaluate multiple responses</span></span>
+<span><span class="co"># Can specify any formula of fixed or random effects</span></span>
+<span><span class="fu"><a href="reference/mvIC_fit.html">mvIC_fit</a></span><span class="op">(</span> <span class="va">Y</span>, <span class="op">~</span> <span class="op">(</span><span class="fl">1</span><span class="op">|</span><span class="va">Species</span><span class="op">)</span>, data<span class="op">=</span><span class="va">iris</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div id="forward-stepwise-regression" class="section level4">
-<h4 class="hasAnchor">
-<a href="#forward-stepwise-regression" class="anchor"></a>Forward stepwise regression</h4>
+<div class="section level4">
+<h4 id="forward-stepwise-regression">Forward stepwise regression<a class="anchor" aria-label="anchor" href="#forward-stepwise-regression"></a>
+</h4>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># Combine responses on *rows*</span>
-<span class="va">Y</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html">with</a></span><span class="op">(</span><span class="va">iris</span>, <span class="fu"><a href="https://rdrr.io/r/base/cbind.html">rbind</a></span><span class="op">(</span><span class="va">Sepal.Width</span>, <span class="va">Sepal.Length</span><span class="op">)</span><span class="op">)</span>
-
-<span class="co"># variables to consider in the model</span>
-<span class="va">variables</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Petal.Length"</span>, <span class="st">"Petal.Width"</span>, <span class="st">"(1|Species)"</span><span class="op">)</span>
-
-<span class="co"># fit forward stepwise regression starting with model: ~1. </span>
-<span class="va">bestModel</span> <span class="op">=</span> <span class="fu"><a href="reference/mvForwardStepwise.html">mvForwardStepwise</a></span><span class="op">(</span> <span class="va">Y</span>, <span class="op">~</span> <span class="fl">1</span>, data<span class="op">=</span><span class="va">iris</span>, variables<span class="op">=</span><span class="va">variables</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Combine responses on *rows*</span></span>
+<span><span class="va">Y</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">iris</span>, <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="va">Sepal.Width</span>, <span class="va">Sepal.Length</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># variables to consider in the model</span></span>
+<span><span class="va">variables</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Petal.Length"</span>, <span class="st">"Petal.Width"</span>, <span class="st">"(1|Species)"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># fit forward stepwise regression starting with model: ~1. </span></span>
+<span><span class="va">bestModel</span> <span class="op">=</span> <span class="fu"><a href="reference/mvForwardStepwise.html">mvForwardStepwise</a></span><span class="op">(</span> <span class="va">Y</span>, <span class="op">~</span> <span class="fl">1</span>, data<span class="op">=</span><span class="va">iris</span>, variables<span class="op">=</span><span class="va">variables</span><span class="op">)</span></span></code></pre></div>
 <p>Categorical variables can be modeled as random effects using the <code>(1|x)</code> syntax. If a random effect is specified, a linear mixed model is fit and the number of parameter equal to the effective degrees of freedom of the model fit. Note that using a linear mixed model is more computationally demanding, but</p>
 <ul>
 <li>prevents over-correction with variables with many categories</li>
@@ -163,35 +158,48 @@ See [manual](http://deepfigv.mssm.edu/img/software/mvIC/mvIC-manual.pdf) for exa
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <div class="links">
-<h2>Links</h2>
+<h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li>Browse source code at <br><a href="https://github.com/GabrielHoffman/mvIC/">https://​github.com/​GabrielHoffman/​mvIC/​</a>
-</li>
+<li><a href="https://github.com/GabrielHoffman/mvIC/" class="external-link">Browse source code</a></li>
 </ul>
 </div>
+
 <div class="license">
-<h2>License</h2>
+<h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li>GPL (&gt;= 2)</li>
 </ul>
 </div>
+
+
+<div class="citation">
+<h2 data-toc-skip>Citation</h2>
+<ul class="list-unstyled">
+<li><a href="authors.html#citation">Citing mvIC</a></li>
+</ul>
+</div>
+
 <div class="developers">
-<h2>Developers</h2>
+<h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Gabriel Hoffman <br><small class="roles"> Author, maintainer </small>  </li>
 </ul>
 </div>
+
+
 
   </div>
 </div>
 
 
       <footer><div class="copyright">
-  <p>Developed by Gabriel Hoffman.</p>
+  <p></p>
+<p>Developed by Gabriel Hoffman.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer>
@@ -199,6 +207,8 @@ See [manual](http://deepfigv.mssm.edu/img/software/mvIC/mvIC-manual.pdf) for exa
 
   
 
+
+  
 
   </body>
 </html>

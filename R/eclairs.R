@@ -91,7 +91,6 @@ setMethod("print", 'eclairs',
 #'
 #'
 #' @importFrom Rfast standardise colVars eachrow
-#' @importFrom PRIMME svds
 #' @importFrom methods new
 #'
 # @export
@@ -143,13 +142,15 @@ eclairs = function(X, k, lambda=NULL, compute=c("covariance", "correlation"), wa
 	}
 
 	# SVD of X to get low rank estimate of Sigma
-	if( k < min(p, n)/3){
-		if( is.null(warmStart) ){
-			dcmp = svds(X, k, isreal=TRUE)
-		}else{			
-			dcmp = svds(X, k, v0=warmStart$U, isreal=TRUE)
-		}
-	}else{
+	# remove dependency on PRIMME
+	# GEH Aug 22, 2022
+	# if( k < min(p, n)/3){
+		# if( is.null(warmStart) ){
+		# 	dcmp = svds(X, k, isreal=TRUE)
+		# }else{			
+		# 	dcmp = svds(X, k, v0=warmStart$U, isreal=TRUE)
+		# }
+	# }else{
 		dcmp = svd(X) 
 
 		# if k < min(n,p) truncate spectrum
@@ -158,7 +159,7 @@ eclairs = function(X, k, lambda=NULL, compute=c("covariance", "correlation"), wa
 			dcmp$v = dcmp$v[,seq_len(k), drop=FALSE]
 			dcmp$d = dcmp$d[seq_len(k)]
 		}
-	}
+	# }
 
 	# Estimate lambda 
 	#################
