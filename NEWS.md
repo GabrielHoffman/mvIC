@@ -1,3 +1,7 @@
+# mvIC 1.6.3
+ - August 30, 2022
+ - update R and variancePartition dependency versions
+
 # mvIC 1.6.2
  - August 22, 2022
  - remove dependency on PRIMME package
